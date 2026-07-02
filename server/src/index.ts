@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { router } from './routes';
-import { getPhotoRecord } from './storage';
+import { getPhotoRecord, cleanupExpiredPhotos } from './storage';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -78,4 +78,8 @@ app.use((req, res) => {
 app.listen(PORT, () => {
   console.log(`📸 Photo Booth Backend Server running on port ${PORT}`);
   console.log(`   Local API: http://localhost:${PORT}/api`);
+  
+  // Clean up expired photos immediately on startup and run hourly in the background
+  cleanupExpiredPhotos();
+  setInterval(cleanupExpiredPhotos, 60 * 60 * 1000);
 });

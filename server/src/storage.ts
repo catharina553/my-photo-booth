@@ -50,9 +50,64 @@ export function savePhotoRecord(record: PhotoRecord, base64Data: string): PhotoR
 
 export function getPhotoRecord(id: string): PhotoRecord | undefined {
   const records = loadDb();
-  return records.find(r => r.id === id);
+  const record = records.find(r => r.id === id);
+  if (!record) return undefined;
+
+  // Check if expired (72 hours)
+  const now = new Date().getTime();
+  const EXPIRE_MS = 72 * 60 * 60 * 1000;
+  const createdTime = new Date(record.createdAt).getTime();
+
+  if (now - createdTime > EXPIRE_MS) {
+    // Silently clean up expired record & image
+    const filePath = path.join(UPLOADS_DIR, record.filename);
+    if (fs.existsSync(filePath)) {
+      try { fs.unlinkSync(filePath); } catch (e) {}
+    }
+    const updated = records.filter(r => r.id !== id);
+    saveDb(updated);
+    return undefined;
+  }
+  return record;
 }
 
 export function getAllPhotos(): PhotoRecord[] {
-  return loadDb().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const records = loadDb();
+  const now = new Date().getTime();
+  const EXPIRE_MS = 72 * 60 * 60 * 1000;
+  // Return only non-expired photos
+  return records
+    .filter(r => now - new Date(r.createdAt).getTime() <= EXPIRE_MS)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+export function cleanupExpiredPhotos() {
+  try {
+    const records = loadDb();
+    const now = new Date().getTime();
+    const EXPIRE_MS = 72 * 60 * 60 * 1000;
+    
+    const validRecords: PhotoRecord[] = [];
+    let deletedCount = 0;
+    
+    for (const record of records) {
+      const createdTime = new Date(record.createdAt).getTime();
+      if (now - createdTime > EXPIRE_MS) {
+        const filePath = path.join(UPLOADS_DIR, record.filename);
+        if (fs.existsSync(filePath)) {
+          try { fs.unlinkSync(filePath); } catch (e) {}
+        }
+        deletedCount++;
+      } else {
+        validRecords.push(record);
+      }
+    }
+    
+    if (deletedCount > 0) {
+      saveDb(validRecords);
+      console.log(`🧹 [Cleanup] Automatically removed ${deletedCount} expired photos (>72h).`);
+    }
+  } catch (err) {
+    console.error('[Cleanup Error] Failed to run photo expiration cleanup:', err);
+  }
 }
