@@ -53,20 +53,31 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
 
   const handleDownloadMobile = async () => {
     if (!imageUrl) return;
+
+    // Detect if iOS, Android, or common in-app browsers
+    const ua = navigator.userAgent.toLowerCase();
+    const isMobileDevice = /iphone|ipad|ipod|android/i.test(ua);
+    const isInAppBrowser = /kakaotalk|instagram|line|fbav|twitter/i.test(ua);
+
+    if (isMobileDevice || isInAppBrowser) {
+      // Direct redirect is the most reliable way to show raw image for saving on mobile!
+      window.location.href = imageUrl;
+      return;
+    }
+
     try {
       const response = await fetch(imageUrl);
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `life4cuts-${photoId}.png`;
+      a.download = `photo-${photoId}.png`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (e) {
-      // Fallback direct open
-      window.open(imageUrl, '_blank');
+      window.location.href = imageUrl;
     }
   };
 
@@ -91,9 +102,9 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
           marginBottom: '12px'
         }}>
           <Camera size={18} className="neon-text" />
-          <span style={{ fontWeight: 800, fontSize: '1rem' }}>인생네컷 • 모바일 뷰</span>
+          <span style={{ fontWeight: 800, fontSize: '1rem' }}>뽀토부스 • 모바일 뷰</span>
         </div>
-        <h1 style={{ fontSize: '1.6rem', fontWeight: 900 }}>오늘의 소중한 인생네컷</h1>
+        <h1 style={{ fontSize: '1.6rem', fontWeight: 900 }}>오늘의 소중한 4컷 사진 📸</h1>
       </div>
 
       {loading ? (
@@ -111,13 +122,28 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
         </div>
       ) : (
         <div className="glass-card" style={{
-          padding: '20px',
+          padding: '24px 20px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           maxWidth: '500px',
           width: '100%'
         }}>
+          <div style={{
+            background: 'rgba(255, 77, 128, 0.12)',
+            color: 'var(--accent-neon-pink)',
+            fontWeight: 800,
+            fontSize: '0.88rem',
+            padding: '10px 16px',
+            borderRadius: '12px',
+            marginBottom: '16px',
+            width: '100%',
+            textAlign: 'center',
+            border: '1px solid rgba(255, 77, 128, 0.25)'
+          }}>
+            💡 이미지를 꾹 누르면 사진첩에 바로 저장돼요!
+          </div>
+
           <div style={{
             width: '100%',
             overflow: 'hidden',
@@ -135,12 +161,12 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
           <button
             onClick={handleDownloadMobile}
             className="btn-primary"
-            style={{ width: '100%', padding: '16px', fontSize: '1.1rem' }}
+            style={{ width: '100%', padding: '16px', fontSize: '1.1rem', borderRadius: '14px' }}
           >
             <Download size={22} /> 스마트폰 사진첩에 저장 (고화질)
           </button>
 
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '12px', textAlign: 'center' }}>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '12px', textAlign: 'center', lineHeight: 1.4 }}>
             위 저장 버튼을 탭하거나 이미지를 길게 누르면 고해상도로 저장할 수 있습니다.
           </p>
         </div>

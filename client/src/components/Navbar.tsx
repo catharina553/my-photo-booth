@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Camera, Volume2, VolumeX, Sparkles } from 'lucide-react';
+import { Camera, Volume2, VolumeX, Sparkles, Sun, Moon } from 'lucide-react';
 import { sound } from '../utils/sound';
 
 import type { BoothStep } from '../App';
@@ -7,9 +7,11 @@ import type { BoothStep } from '../App';
 interface NavbarProps {
   currentStep: BoothStep;
   onReset: () => void;
+  theme: 'light' | 'dark';
+  toggleTheme: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ currentStep, onReset }) => {
+export const Navbar: React.FC<NavbarProps> = ({ currentStep, onReset, theme, toggleTheme }) => {
   const [muted, setMuted] = useState(sound.isMuted());
 
   const handleToggleSound = () => {
@@ -39,10 +41,10 @@ export const Navbar: React.FC<NavbarProps> = ({ currentStep, onReset }) => {
         </div>
         <div className="nav-title-box">
           <h1 style={{ fontSize: '1.4rem', fontWeight: 900, lineHeight: 1.1 }}>
-            LIFE <span className="neon-text">4</span> CUTS
+            <span className="neon-text">뽀토부스</span>
           </h1>
           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', letterSpacing: '0.15em', fontWeight: 600 }}>
-            스튜디오 포토부스
+            스마트 포토부스
           </p>
         </div>
       </div>
@@ -58,15 +60,24 @@ export const Navbar: React.FC<NavbarProps> = ({ currentStep, onReset }) => {
         <StepBadge step={4} label="4. 인쇄 & 공유" active={currentStep === 'share'} done={false} />
       </div>
 
-      {/* Sound & Controls */}
+      {/* Sound, Theme & Controls */}
       <div className="nav-controls" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <button
+          onClick={toggleTheme}
+          className="btn-secondary"
+          style={{ padding: '10px 14px', borderRadius: '12px' }}
+          title={theme === 'light' ? '다크 모드로 전환' : '라이트 모드로 전환'}
+        >
+          {theme === 'light' ? <Moon size={18} color="var(--accent-neon-purple)" /> : <Sun size={18} color="var(--accent-neon-cyan)" />}
+        </button>
+
         <button
           onClick={handleToggleSound}
           className="btn-secondary"
           style={{ padding: '10px 14px', borderRadius: '12px' }}
           title={muted ? '소리 켜기' : '소리 끄기'}
         >
-          {muted ? <VolumeX size={18} color="var(--text-muted)" /> : <Volume2 size={18} color="var(--accent-neon-cyan)" />}
+          {muted ? <VolumeX size={18} color="var(--text-muted)" /> : <Volume2 size={18} color="var(--accent-neon-pink)" />}
         </button>
       </div>
     </header>

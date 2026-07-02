@@ -15,6 +15,19 @@ export const App: React.FC = () => {
   const [capturedPhotos, setCapturedPhotos] = useState<string[]>([]);
   const [finishedCanvas, setFinishedCanvas] = useState<HTMLCanvasElement | null>(null);
   const [shareParamId, setShareParamId] = useState<string | null>(null);
+  
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    return (localStorage.getItem('theme') as 'light' | 'dark') || 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
 
   useEffect(() => {
     // Check if opened via QR code share link (?share=ID)
@@ -38,7 +51,7 @@ export const App: React.FC = () => {
 
   return (
     <div className="app-container">
-      <Navbar currentStep={step} onReset={handleReset} />
+      <Navbar currentStep={step} onReset={handleReset} theme={theme} toggleTheme={toggleTheme} />
 
       <main style={{ marginTop: '16px' }}>
         {step === 'layout' && (
@@ -55,7 +68,7 @@ export const App: React.FC = () => {
                 marginBottom: '16px'
               }}>
                 <Sparkles size={16} className="neon-text" />
-                <span style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-muted)' }}>스튜디오 인생네컷</span>
+                <span style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-muted)' }}>뽀토부스</span>
               </div>
               <h2 style={{ fontSize: '2.2rem', fontWeight: 900, marginBottom: '12px' }}>
                 프레임 규격 선택

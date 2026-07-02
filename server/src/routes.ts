@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { savePhotoRecord, getPhotoRecord, getAllPhotos } from './storage';
+import { uploadToGoogleDrive } from './googleDrive';
 
 export const router = Router();
 
@@ -74,6 +75,18 @@ router.post('/photos', (req: Request, res: Response): void => {
       createdAt,
       filename
     }, imageDataUrl);
+
+    // Upload to Google Drive in the background (asynchronous, does not block response)
+    const localFilePath = path.join(__dirname, '../uploads', filename);
+    uploadToGoogleDrive(localFilePath, filename)
+      .then(link => {
+        if (link) {
+          console.log(`🔗 [Google Drive] Photo successfully auto-saved to cloud: ${link}`);
+        }
+      })
+      .catch(err => {
+        console.error('❌ [Google Drive] Background upload failed:', err);
+      });
     
     res.status(201).json({
       success: true,

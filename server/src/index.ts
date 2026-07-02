@@ -33,15 +33,15 @@ app.use((req, res, next) => {
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>인생네컷(made by catharina)</title>
-  <meta name="description" content="인생네컷(made by catharina)에서 촬영한 오늘의 사진이 도착했습니다! 지금 확인해 보세요." />
+  <title>뽀토부스</title>
+  <meta name="description" content="뽀토부스에서 촬영한 오늘의 사진이 도착했습니다! 지금 확인해 보세요." />
   
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="인생네컷(made by catharina) • 오늘의 네컷 사진 📸" />
-  <meta property="og:description" content="인생네컷(made by catharina)에서 촬영한 오늘의 네컷 사진을 확인하세요." />
+  <meta property="og:title" content="뽀토부스 • 오늘의 네컷 사진 📸" />
+  <meta property="og:description" content="뽀토부스에서 촬영한 오늘의 네컷 사진을 확인하세요." />
   <meta property="og:image" content="${imageUrl}" />
   <meta property="og:url" content="${pageUrl}" />
-  <meta property="og:site_name" content="인생네컷(made by catharina)" />
+  <meta property="og:site_name" content="뽀토부스" />
   
   <!-- KakaoTalk specific tags -->
   <meta property="og:image:width" content="1200" />

@@ -161,9 +161,102 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
           <ArrowLeft size={16} /> 규격 다시 선택
         </button>
       </div>
-      <div className="camera-booth-layout">
-        {/* Main Camera Viewport */}
-        <div className="glass-card camera-viewport-card" style={{ padding: '20px', position: 'relative', overflow: 'hidden' }}>
+
+      <div className="camera-booth-layout" style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'center' }}>
+        
+        {/* 1. Top Section: Settings & Action Panel */}
+        <div className="glass-card controls-top-card" style={{ padding: '24px', width: '100%', maxWidth: '580px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Action Buttons Row */}
+          <div>
+            {capturedPhotos.length < 4 ? (
+              <button
+                onClick={startAutomatedSession}
+                disabled={!streamActive || isCapturingSession}
+                className="btn-primary"
+                style={{ width: '100%', padding: '16px', fontSize: '1.1rem', borderRadius: '16px' }}
+              >
+                <Play size={20} fill="currentColor" />
+                {isCapturingSession ? '순차 촬영 진행 중...' : '📸 4컷 촬영 시작'}
+              </button>
+            ) : (
+              <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+                <button
+                  onClick={() => onComplete(capturedPhotos)}
+                  className="btn-primary"
+                  style={{ flex: 2, padding: '16px', borderRadius: '16px' }}
+                >
+                  <Check size={20} /> 🎨 프레임 선택 및 꾸미기
+                </button>
+                <button
+                  onClick={handleRetakeAll}
+                  className="btn-secondary"
+                  style={{ flex: 1, borderRadius: '16px' }}
+                >
+                  <RefreshCw size={16} /> 다시 촬영
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Settings Row */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '16px',
+            flexWrap: 'wrap'
+          }}>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={() => setMirrored(!mirrored)}
+                className="btn-secondary"
+                disabled={isCapturingSession}
+                title="화면 좌우 반전"
+                style={{ padding: '8px 14px', borderRadius: '12px' }}
+              >
+                <FlipHorizontal size={18} /> {mirrored ? '좌우 반전' : '기본 화면'}
+              </button>
+              <button
+                onClick={() => setShowGrid(!showGrid)}
+                className="btn-secondary"
+                disabled={isCapturingSession}
+                title="가이드 격자 토글"
+                style={{ padding: '8px 14px', borderRadius: '12px' }}
+              >
+                <Grid size={18} /> {showGrid ? '격자 켜짐' : '격자 꺼짐'}
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>
+                <Clock size={16} />
+                <span>타이머:</span>
+              </div>
+              {[3, 5, 10].map(sec => (
+                <button
+                  key={sec}
+                  onClick={() => setTimerSeconds(sec)}
+                  disabled={isCapturingSession}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '10px',
+                    background: timerSeconds === sec ? 'var(--accent-neon-cyan)' : 'var(--bg-tertiary)',
+                    color: timerSeconds === sec ? '#000' : 'var(--text-main)',
+                    fontWeight: 700,
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  {sec}s
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* 2. Middle Section: Camera Viewport (Resized & centered for iPad/tablets) */}
+        <div className="glass-card camera-viewport-card" style={{ padding: '20px', width: '100%', maxWidth: '580px', position: 'relative', overflow: 'hidden' }}>
           <div style={{
             position: 'relative',
             width: '100%',
@@ -171,7 +264,7 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
             background: '#000',
             borderRadius: '16px',
             overflow: 'hidden',
-            boxShadow: 'inset 0 0 40px rgba(0,0,0,0.8)'
+            boxShadow: 'inset 0 0 40px rgba(0,0,0,0.9)'
           }}>
             {/* Flash screen effect */}
             {flash && (
@@ -184,7 +277,7 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
               }} className="animate-flash" />
             )}
 
-            {/* Countdown Overlay (Top-Right Neon Pink Circular Badge) */}
+            {/* Countdown Overlay */}
             {countdown !== null && countdown > 0 && (
               <div style={{
                 position: 'absolute',
@@ -302,123 +395,34 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
               </div>
             )}
           </div>
-
-          {/* Camera Controls Bar */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginTop: '20px',
-            gap: '16px',
-            flexWrap: 'wrap'
-          }}>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                onClick={() => setMirrored(!mirrored)}
-                className="btn-secondary"
-                disabled={isCapturingSession}
-                title="화면 좌우 반전"
-              >
-                <FlipHorizontal size={18} /> {mirrored ? '좌우 반전' : '기본 화면'}
-              </button>
-              <button
-                onClick={() => setShowGrid(!showGrid)}
-                className="btn-secondary"
-                disabled={isCapturingSession}
-                title="가이드 격자 토글"
-              >
-                <Grid size={18} /> {showGrid ? '격자 켜짐' : '격자 꺼짐'}
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                <Clock size={16} />
-                <span>타이머:</span>
-              </div>
-              {[3, 5, 10].map(sec => (
-                <button
-                  key={sec}
-                  onClick={() => setTimerSeconds(sec)}
-                  disabled={isCapturingSession}
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    background: timerSeconds === sec ? 'var(--accent-neon-cyan)' : 'var(--bg-tertiary)',
-                    color: timerSeconds === sec ? '#000' : 'var(--text-main)',
-                    fontWeight: 700,
-                    border: 'none',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {sec}s
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
 
-        {/* Right Sidebar: 4-Cut Live Progress Strip */}
-        <div className="glass-card preview-sidebar-card">
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Sparkles size={18} className="neon-text" /> 4컷 미리보기
+        {/* 3. Bottom Section: 4-Cut Preview Strip Tray */}
+        <div className="glass-card preview-sidebar-card" style={{ padding: '24px', width: '100%', maxWidth: '580px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Sparkles size={18} className="neon-text" /> 4컷 촬영 현황
           </h2>
-          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '20px' }}>
-            {capturedPhotos.length === 4
-              ? '4장의 사진이 모두 촬영되었습니다! 프레임을 디자인해 보세요.'
-              : `자동으로 4컷이 촬영됩니다. (${timerSeconds}초 타이머)`}
-          </p>
-
-          {/* Action Buttons */}
-          {capturedPhotos.length < 4 ? (
-            <button
-              onClick={startAutomatedSession}
-              disabled={!streamActive || isCapturingSession}
-              className="btn-primary"
-              style={{ width: '100%', padding: '16px', marginBottom: '20px' }}
-            >
-              <Play size={20} fill="currentColor" />
-              {isCapturingSession ? '순차 촬영 진행 중...' : '4컷 촬영 시작'}
-            </button>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
-              <button
-                onClick={() => onComplete(capturedPhotos)}
-                className="btn-primary"
-                style={{ width: '100%', padding: '16px' }}
-              >
-                <Check size={20} /> 프레임 선택 및 꾸미기
-              </button>
-              <button
-                onClick={handleRetakeAll}
-                className="btn-secondary"
-                style={{ width: '100%' }}
-              >
-                <RefreshCw size={16} /> 전체 다시 촬영
-              </button>
-            </div>
-          )}
-
-          {/* 4-Cut Slots */}
-          <div className="preview-slots-container">
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
             {[0, 1, 2, 3].map((index) => {
               const photo = capturedPhotos[index];
               const isCurrent = isCapturingSession && currentShotIndex === index + 1;
 
               return (
-                <div key={index} className={`preview-slot ${isCurrent ? 'current' : ''}`} style={{ aspectRatio: cameraAspectRatio }}>
+                <div key={index} className={`preview-slot ${isCurrent ? 'current' : ''}`} style={{ aspectRatio: cameraAspectRatio, borderRadius: '12px', overflow: 'hidden', border: isCurrent ? '2px solid var(--accent-neon-pink)' : '1px solid var(--border-glass)', background: 'var(--bg-tertiary)', position: 'relative' }}>
                   {photo ? (
                     <img src={photo} alt={`Shot ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
-                    <span className="slot-placeholder-text">
-                      {isCurrent ? `${index + 1}번째 컷 촬영 중...` : `${index + 1}번째 컷`}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-subtle)', textAlign: 'center', padding: '4px' }}>
+                      {isCurrent ? `진행중` : `${index + 1}번`}
+                    </div>
                   )}
                 </div>
               );
             })}
           </div>
         </div>
+
       </div>
     </div>
   );
