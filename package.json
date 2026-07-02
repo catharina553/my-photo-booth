@@ -8,7 +8,7 @@
     "dev:client": "npm run dev --prefix client",
     "build": "npm run build --prefix client",
     "postinstall": "npm install --prefix server && npm install --prefix client",
-    "start": "npx ts-node server/src/index.ts"
+    "start": "npm run build --prefix client && npx ts-node server/src/index.ts"
   },
   "dependencies": {
     "ts-node": "^10.9.2",
