@@ -19,16 +19,31 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
 
   const fetchPhotoDetails = async () => {
     setLoading(true);
+    setError(null);
+    
+    // Set a 45-second timeout since Render free servers take up to 50 seconds to wake up from cold start
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
+    
     try {
-      const res = await fetch(`${apiHost}/api/photos/${photoId}`);
+      const res = await fetch(`${apiHost}/api/photos/${photoId}`, {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      
       if (!res.ok) {
-        throw new Error('포토 세션을 찾을 수 없거나 이미 만료되었습니다.');
+        throw new Error('사진 세션을 찾을 수 없거나 이미 만료되었습니다. (최대 72시간 보관)');
       }
       const data = await res.json();
       setPhotoData(data);
     } catch (err: any) {
-      console.error('Failed to load shared photo', err);
-      setError(err.message || '사진 상세 정보를 불러올 수 없습니다.');
+      clearTimeout(timeoutId);
+      console.error('Failed to load shared photo:', err);
+      if (err.name === 'AbortError') {
+        setError('서버 응답 초과: 서버가 휴면 상태에서 깨어나는 데 시간이 더 걸리고 있습니다. 새로고침을 해주시거나 잠시만 기다려 주세요.');
+      } else {
+        setError(err.message || '사진 상세 정보를 불러올 수 없습니다.');
+      }
     } finally {
       setLoading(false);
     }
@@ -82,8 +97,11 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
       </div>
 
       {loading ? (
-        <div className="glass-card" style={{ padding: '48px', textAlign: 'center', borderRadius: '20px' }}>
+        <div className="glass-card" style={{ padding: '48px', textAlign: 'center', borderRadius: '20px', maxWidth: '400px' }}>
           <div className="neon-text" style={{ fontSize: '1.2rem', marginBottom: '8px' }}>고해상도 사진 로딩 중...</div>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.5, marginTop: '8px' }}>
+            서버가 휴면 상태일 경우 깨어나는 데 최대 1분이 소요될 수 있습니다. 잠시만 기다려 주세요.
+          </p>
         </div>
       ) : error || !photoData ? (
         <div className="glass-card" style={{ padding: '40px', textAlign: 'center', maxWidth: '400px', borderRadius: '20px' }}>
