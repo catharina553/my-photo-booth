@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, RefreshCw, Play, Check, Grid, FlipHorizontal, Clock, Sparkles } from 'lucide-react';
+import { Camera, RefreshCw, Play, Check, Grid, FlipHorizontal, Clock, Sparkles, ArrowLeft } from 'lucide-react';
 import { sound } from '../utils/sound';
+import type { FrameLayout } from '../utils/canvasRenderer';
 
 interface CameraBoothProps {
+  layout: FrameLayout;
+  onBack: () => void;
   onComplete: (photos: string[]) => void;
 }
 
-export const CameraBooth: React.FC<CameraBoothProps> = ({ onComplete }) => {
+export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComplete }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hiddenCanvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -149,15 +152,22 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ onComplete }) => {
     setCapturedPhotos([]);
   };
 
+  const cameraAspectRatio = layout === '2x6-strip-pair' ? '480 / 340' : '510 / 660';
+
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 28px 40px' }} className="animate-fade-in camera-booth-wrapper">
+      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-start' }}>
+        <button onClick={onBack} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '12px' }}>
+          <ArrowLeft size={16} /> 규격 다시 선택
+        </button>
+      </div>
       <div className="camera-booth-layout">
         {/* Main Camera Viewport */}
         <div className="glass-card camera-viewport-card" style={{ padding: '20px', position: 'relative', overflow: 'hidden' }}>
           <div style={{
             position: 'relative',
             width: '100%',
-            aspectRatio: '1 / 1',
+            aspectRatio: cameraAspectRatio,
             background: '#000',
             borderRadius: '16px',
             overflow: 'hidden',
@@ -366,7 +376,7 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ onComplete }) => {
               const isCurrent = isCapturingSession && currentShotIndex === index + 1;
 
               return (
-                <div key={index} className={`preview-slot ${isCurrent ? 'current' : ''}`}>
+                <div key={index} className={`preview-slot ${isCurrent ? 'current' : ''}`} style={{ aspectRatio: cameraAspectRatio }}>
                   {photo ? (
                     <img src={photo} alt={`Shot ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (

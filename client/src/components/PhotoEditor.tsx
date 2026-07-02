@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Palette, Layout, Sliders, Type, ArrowLeft, QrCode, Sparkles, Upload } from 'lucide-react';
+import { Palette, Sliders, Type, ArrowLeft, QrCode, Sparkles, Upload } from 'lucide-react';
 import type { FrameLayout, PhotoFilter, RenderConfig } from '../utils/canvasRenderer';
 import { renderPhotoBoothCanvas } from '../utils/canvasRenderer';
 
 interface PhotoEditorProps {
   photos: string[];
+  layout: FrameLayout;
   onBack: () => void;
   onFinish: (canvas: HTMLCanvasElement, config: RenderConfig) => void;
 }
@@ -28,8 +29,7 @@ const FILTERS: { name: string; id: PhotoFilter }[] = [
   { name: '시원한 안개', id: 'cool' },
 ];
 
-export const PhotoEditor: React.FC<PhotoEditorProps> = ({ photos, onBack, onFinish }) => {
-  const [layout, setLayout] = useState<FrameLayout>('2x6-strip-pair');
+export const PhotoEditor: React.FC<PhotoEditorProps> = ({ photos, layout, onBack, onFinish }) => {
   const [frameColor, setFrameColor] = useState<string>('#ffffff');
   const [filter, setFilter] = useState<PhotoFilter>('normal');
   const [footerText, setFooterText] = useState<string>('인생네컷 • 스튜디오');
@@ -162,49 +162,7 @@ export const PhotoEditor: React.FC<PhotoEditorProps> = ({ photos, onBack, onFini
             </p>
           </div>
 
-          {/* 1. Layout Selector */}
-          <div>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', fontWeight: 700, marginBottom: '12px', color: 'var(--text-muted)' }}>
-              <Layout size={18} color="var(--accent-neon-cyan)" /> 프레임 레이아웃
-            </label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <button
-                onClick={() => setLayout('2x6-strip-pair')}
-                style={{
-                  padding: '12px',
-                  borderRadius: '12px',
-                  border: layout === '2x6-strip-pair' ? '2px solid var(--accent-neon-pink)' : '1px solid var(--border-glass)',
-                  background: layout === '2x6-strip-pair' ? 'rgba(244,63,94,0.15)' : 'var(--bg-tertiary)',
-                  color: layout === '2x6-strip-pair' ? '#ffffff' : 'var(--text-muted)',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  textAlign: 'center'
-                }}
-              >
-                2x6인치 2줄
-                <div style={{ fontSize: '0.7rem', fontWeight: 400, opacity: 0.7, marginTop: '2px' }}>시그니처 4컷</div>
-              </button>
-
-              <button
-                onClick={() => setLayout('2x2-grid')}
-                style={{
-                  padding: '12px',
-                  borderRadius: '12px',
-                  border: layout === '2x2-grid' ? '2px solid var(--accent-neon-pink)' : '1px solid var(--border-glass)',
-                  background: layout === '2x2-grid' ? 'rgba(244,63,94,0.15)' : 'var(--bg-tertiary)',
-                  color: layout === '2x2-grid' ? '#ffffff' : 'var(--text-muted)',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  textAlign: 'center'
-                }}
-              >
-                2x2 엽서 그리드
-                <div style={{ fontSize: '0.7rem', fontWeight: 400, opacity: 0.7, marginTop: '2px' }}>모던 레이아웃</div>
-              </button>
-            </div>
-          </div>
-
-          {/* 2. Frame Color Swatches */}
+          {/* 1. Frame Color Swatches */}
           <div>
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', fontWeight: 700, marginBottom: '12px', color: 'var(--text-muted)' }}>
               <Palette size={18} color="var(--accent-neon-pink)" /> 프레임 테마 선택

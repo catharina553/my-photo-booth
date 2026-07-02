@@ -175,7 +175,7 @@ export async function renderPhotoBoothCanvas(config: RenderConfig): Promise<HTML
     const startY = 150;
 
     const photoW = 510;
-    const photoH = 510;
+    const photoH = 660;
     const gapX = 40;
     const gapY = 40;
 

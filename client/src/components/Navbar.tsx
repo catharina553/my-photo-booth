@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Camera, Volume2, VolumeX, Sparkles } from 'lucide-react';
 import { sound } from '../utils/sound';
 
+import type { BoothStep } from '../App';
+
 interface NavbarProps {
-  currentStep: 'capture' | 'customize' | 'share';
+  currentStep: BoothStep;
   onReset: () => void;
 }
 
@@ -47,11 +49,13 @@ export const Navbar: React.FC<NavbarProps> = ({ currentStep, onReset }) => {
 
       {/* Step Indicator */}
       <div className="step-indicator-container">
-        <StepBadge step={1} label="1. 사진 촬영" active={currentStep === 'capture'} done={currentStep !== 'capture'} />
+        <StepBadge step={1} label="1. 규격 선택" active={currentStep === 'layout'} done={currentStep !== 'layout'} />
         <div className="step-line" />
-        <StepBadge step={2} label="2. 프레임 꾸미기" active={currentStep === 'customize'} done={currentStep === 'share'} />
+        <StepBadge step={2} label="2. 사진 촬영" active={currentStep === 'capture'} done={currentStep !== 'layout' && currentStep !== 'capture'} />
         <div className="step-line" />
-        <StepBadge step={3} label="3. 인쇄 & 공유" active={currentStep === 'share'} done={false} />
+        <StepBadge step={3} label="3. 프레임 꾸미기" active={currentStep === 'customize'} done={currentStep === 'share'} />
+        <div className="step-line" />
+        <StepBadge step={4} label="4. 인쇄 & 공유" active={currentStep === 'share'} done={false} />
       </div>
 
       {/* Sound & Controls */}
