@@ -6,9 +6,13 @@
     "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client",
-    "build": "npm run build --prefix server && npm run build --prefix client",
+    "build": "npm run build --prefix client",
     "postinstall": "npm install --prefix server && npm install --prefix client",
-    "start": "node server/dist/index.js"
+    "start": "npx ts-node server/src/index.ts"
+  },
+  "dependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
