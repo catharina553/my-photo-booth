@@ -157,7 +157,7 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ onComplete }) => {
           <div style={{
             position: 'relative',
             width: '100%',
-            aspectRatio: '4 / 3',
+            aspectRatio: '1 / 1',
             background: '#000',
             borderRadius: '16px',
             overflow: 'hidden',
@@ -174,23 +174,27 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ onComplete }) => {
               }} className="animate-flash" />
             )}
 
-            {/* Countdown Overlay */}
+            {/* Countdown Overlay (Top-Right Neon Pink Circular Badge) */}
             {countdown !== null && countdown > 0 && (
               <div style={{
                 position: 'absolute',
-                inset: 0,
+                top: '20px',
+                right: '20px',
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                background: 'rgba(244, 63, 94, 0.85)',
+                boxShadow: '0 0 20px rgba(244, 63, 94, 0.6)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 zIndex: 30,
-                background: 'rgba(0,0,0,0.35)',
-                backdropFilter: 'blur(4px)'
+                border: '2px solid #ffffff'
               }}>
                 <div className="animate-countdown" style={{
-                  fontSize: '8rem',
+                  fontSize: '2.4rem',
                   fontWeight: 900,
-                  color: countdown === 1 ? 'var(--accent-neon-pink)' : '#ffffff',
-                  textShadow: '0 0 30px rgba(244, 63, 94, 0.8)'
+                  color: '#ffffff'
                 }}>
                   {countdown}
                 </div>
