@@ -1,9 +1,31 @@
 import { Router, Request, Response } from 'express';
 import os from 'os';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 import { savePhotoRecord, getPhotoRecord, getAllPhotos } from './storage';
 
 export const router = Router();
+
+router.get('/debug-paths', (req: Request, res: Response) => {
+  try {
+    const results: any = {};
+    results.dirname = __dirname;
+    results.cwd = process.cwd();
+    results.rootExists = fs.existsSync(path.join(__dirname, '../../'));
+    results.clientExists = fs.existsSync(path.join(__dirname, '../../client'));
+    if (results.clientExists) {
+      results.clientFiles = fs.readdirSync(path.join(__dirname, '../../client'));
+    }
+    results.distExists = fs.existsSync(path.join(__dirname, '../../client/dist'));
+    if (results.distExists) {
+      results.distFiles = fs.readdirSync(path.join(__dirname, '../../client/dist'));
+    }
+    res.json(results);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Get LAN IP address for QR code generation
 router.get('/network', (req: Request, res: Response) => {
