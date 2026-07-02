@@ -369,6 +369,36 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
               : `자동으로 4컷이 촬영됩니다. (${timerSeconds}초 타이머)`}
           </p>
 
+          {/* Action Buttons */}
+          {capturedPhotos.length < 4 ? (
+            <button
+              onClick={startAutomatedSession}
+              disabled={!streamActive || isCapturingSession}
+              className="btn-primary"
+              style={{ width: '100%', padding: '16px', marginBottom: '20px' }}
+            >
+              <Play size={20} fill="currentColor" />
+              {isCapturingSession ? '순차 촬영 진행 중...' : '4컷 촬영 시작'}
+            </button>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+              <button
+                onClick={() => onComplete(capturedPhotos)}
+                className="btn-primary"
+                style={{ width: '100%', padding: '16px' }}
+              >
+                <Check size={20} /> 프레임 선택 및 꾸미기
+              </button>
+              <button
+                onClick={handleRetakeAll}
+                className="btn-secondary"
+                style={{ width: '100%' }}
+              >
+                <RefreshCw size={16} /> 전체 다시 촬영
+              </button>
+            </div>
+          )}
+
           {/* 4-Cut Slots */}
           <div className="preview-slots-container">
             {[0, 1, 2, 3].map((index) => {
@@ -388,36 +418,6 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
               );
             })}
           </div>
-
-          {/* Action Buttons */}
-          {capturedPhotos.length < 4 ? (
-            <button
-              onClick={startAutomatedSession}
-              disabled={!streamActive || isCapturingSession}
-              className="btn-primary"
-              style={{ width: '100%', padding: '16px' }}
-            >
-              <Play size={20} fill="currentColor" />
-              {isCapturingSession ? '순차 촬영 진행 중...' : '4컷 촬영 시작'}
-            </button>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <button
-                onClick={() => onComplete(capturedPhotos)}
-                className="btn-primary"
-                style={{ width: '100%', padding: '16px' }}
-              >
-                <Check size={20} /> 프레임 선택 및 꾸미기
-              </button>
-              <button
-                onClick={handleRetakeAll}
-                className="btn-secondary"
-                style={{ width: '100%' }}
-              >
-                <RefreshCw size={16} /> 전체 다시 촬영
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </div>
