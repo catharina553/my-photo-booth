@@ -32,7 +32,7 @@ const FILTERS: { name: string; id: PhotoFilter }[] = [
 export const PhotoEditor: React.FC<PhotoEditorProps> = ({ photos, layout, onBack, onFinish }) => {
   const [frameColor, setFrameColor] = useState<string>('#ffffff');
   const [filter, setFilter] = useState<PhotoFilter>('normal');
-  const [footerText, setFooterText] = useState<string>('인생네컷 • 스튜디오');
+  const [footerText, setFooterText] = useState<string>('');
   const [dateStr] = useState<string>(new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }));
   const [customFrameName, setCustomFrameName] = useState<string | null>(null);
 

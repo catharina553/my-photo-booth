@@ -134,14 +134,14 @@ export async function renderPhotoBoothCanvas(config: RenderConfig): Promise<HTML
         }
       }
 
-      // Footer branding in each strip (only if NOT custom image frame)
-      if (!isImageFrame) {
+      // Footer branding in each strip (only if NOT custom image frame and text is provided)
+      if (!isImageFrame && config.footerText) {
         const footerY = startY + 4 * (photoH + photoGapY) + 30;
         ctx.fillStyle = textColor;
         ctx.textAlign = 'center';
         
         ctx.font = 'bold 36px "Inter", "Outfit", sans-serif';
-        ctx.fillText(config.footerText || '인생네컷', stripX + stripWidth / 2, footerY);
+        ctx.fillText(config.footerText, stripX + stripWidth / 2, footerY);
       }
     });
 
@@ -161,12 +161,12 @@ export async function renderPhotoBoothCanvas(config: RenderConfig): Promise<HTML
 
   } else {
     // 2x2 Grid Layout on 4x6 Postcard
-    // Header title at top (only if NOT custom image frame)
-    if (!isImageFrame) {
+    // Header title at top (only if NOT custom image frame and text is provided)
+    if (!isImageFrame && config.footerText) {
       ctx.fillStyle = textColor;
       ctx.textAlign = 'center';
       ctx.font = '900 56px "Inter", "Outfit", sans-serif';
-      ctx.fillText(config.footerText || '인생네컷 • 스튜디오', width / 2, 100);
+      ctx.fillText(config.footerText, width / 2, 100);
     }
 
     // Grid of 4 cuts: 2 columns x 2 rows
