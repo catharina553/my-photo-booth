@@ -96,19 +96,23 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
     return canvas.toDataURL('image/jpeg', 0.92);
   };
 
-  // Run automated 4-shot capture flow
+  const [selectedPhotoIndices, setSelectedPhotoIndices] = useState<number[]>([]);
+
+  // Run automated 8-shot capture flow
   const startAutomatedSession = () => {
     if (!streamActive || isCapturingSession) return;
     setCapturedPhotos([]);
+    setSelectedPhotoIndices([]);
     setIsCapturingSession(true);
     setCurrentShotIndex(1);
     runShotSequence(1, []);
   };
 
   const runShotSequence = (shotNum: number, currentList: string[]) => {
-    if (shotNum > 4) {
+    if (shotNum > 8) {
       setIsCapturingSession(false);
       setCountdown(null);
+      stopCamera();
       return;
     }
 
@@ -135,13 +139,14 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
         const updatedList = [...currentList, photoData];
         setCapturedPhotos(updatedList);
 
-        // Pause 1 second before next shot countdown starts
+        // Pause 1.2 seconds before next shot countdown starts
         setTimeout(() => {
-          if (shotNum < 4) {
+          if (shotNum < 8) {
             runShotSequence(shotNum + 1, updatedList);
           } else {
             setIsCapturingSession(false);
             setCountdown(null);
+            stopCamera(); // Turn off camera to save resources during photo selection
           }
         }, 1200);
       }
@@ -150,6 +155,8 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
 
   const handleRetakeAll = () => {
     setCapturedPhotos([]);
+    setSelectedPhotoIndices([]);
+    startCamera();
   };
 
   const cameraAspectRatio = layout === '2x6-strip-pair' ? '480 / 340' : '510 / 660';
@@ -168,7 +175,7 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
         <div className="glass-card controls-top-card" style={{ padding: '24px', width: '100%', maxWidth: '580px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* Action Buttons Row */}
           <div>
-            {capturedPhotos.length < 4 ? (
+            {capturedPhotos.length < 8 ? (
               <button
                 onClick={startAutomatedSession}
                 disabled={!streamActive || isCapturingSession}
@@ -176,16 +183,20 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
                 style={{ width: '100%', padding: '16px', fontSize: '1.1rem', borderRadius: '16px' }}
               >
                 <Play size={20} fill="currentColor" />
-                {isCapturingSession ? '순차 촬영 진행 중...' : '📸 4컷 촬영 시작'}
+                {isCapturingSession ? `순차 촬영 진행 중... (${currentShotIndex}/8번째 컷)` : '📸 8컷 촬영 시작'}
               </button>
             ) : (
               <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
                 <button
-                  onClick={() => onComplete(capturedPhotos)}
+                  onClick={() => {
+                    const orderedPhotos = selectedPhotoIndices.map(i => capturedPhotos[i]);
+                    onComplete(orderedPhotos);
+                  }}
+                  disabled={selectedPhotoIndices.length !== 4}
                   className="btn-primary"
-                  style={{ flex: 2, padding: '16px', borderRadius: '16px' }}
+                  style={{ flex: 2, padding: '16px', borderRadius: '16px', opacity: selectedPhotoIndices.length === 4 ? 1 : 0.6 }}
                 >
-                  <Check size={20} /> 🎨 프레임 선택 및 꾸미기
+                  <Check size={20} /> 🎨 프레임 선택 및 꾸미기 ({selectedPhotoIndices.length}/4)
                 </button>
                 <button
                   onClick={handleRetakeAll}
@@ -210,7 +221,7 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
               <button
                 onClick={() => setMirrored(!mirrored)}
                 className="btn-secondary"
-                disabled={isCapturingSession}
+                disabled={isCapturingSession || capturedPhotos.length === 8}
                 title="화면 좌우 반전"
                 style={{ padding: '8px 14px', borderRadius: '12px' }}
               >
@@ -219,7 +230,7 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
               <button
                 onClick={() => setShowGrid(!showGrid)}
                 className="btn-secondary"
-                disabled={isCapturingSession}
+                disabled={isCapturingSession || capturedPhotos.length === 8}
                 title="가이드 격자 토글"
                 style={{ padding: '8px 14px', borderRadius: '12px' }}
               >
@@ -236,7 +247,7 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
                 <button
                   key={sec}
                   onClick={() => setTimerSeconds(sec)}
-                  disabled={isCapturingSession}
+                  disabled={isCapturingSession || capturedPhotos.length === 8}
                   style={{
                     padding: '6px 12px',
                     borderRadius: '10px',
@@ -255,7 +266,7 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
           </div>
         </div>
 
-        {/* 2. Middle Section: Camera Viewport (Resized & centered for iPad/tablets) */}
+        {/* 2. Middle Section: Camera Viewport or Photo Selection Grid */}
         <div className="glass-card camera-viewport-card" style={{ padding: '20px', width: '100%', maxWidth: '580px', position: 'relative', overflow: 'hidden' }}>
           <div style={{
             position: 'relative',
@@ -266,161 +277,286 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
             overflow: 'hidden',
             boxShadow: 'inset 0 0 40px rgba(0,0,0,0.9)'
           }}>
-            {/* Flash screen effect */}
-            {flash && (
+            {capturedPhotos.length === 8 ? (
               <div style={{
                 position: 'absolute',
                 inset: 0,
-                background: '#ffffff',
-                zIndex: 40,
-                opacity: 0.95
-              }} className="animate-flash" />
-            )}
-
-            {/* Countdown Overlay */}
-            {countdown !== null && countdown > 0 && (
-              <div style={{
-                position: 'absolute',
-                top: '20px',
-                right: '20px',
-                width: '64px',
-                height: '64px',
-                borderRadius: '50%',
-                background: 'rgba(244, 63, 94, 0.85)',
-                boxShadow: '0 0 20px rgba(244, 63, 94, 0.6)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 30,
-                border: '2px solid #ffffff'
-              }}>
-                <div className="animate-countdown" style={{
-                  fontSize: '2.4rem',
-                  fontWeight: 900,
-                  color: '#ffffff'
-                }}>
-                  {countdown}
-                </div>
-              </div>
-            )}
-
-            {/* Video Element */}
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                transform: mirrored ? 'scaleX(-1)' : 'none',
-                display: streamActive ? 'block' : 'none'
-              }}
-            />
-
-            {/* Hidden canvas for capturing frame */}
-            <canvas ref={hiddenCanvasRef} style={{ display: 'none' }} />
-
-            {/* Camera Error Message */}
-            {cameraError && (
-              <div style={{
-                position: 'absolute',
-                inset: 0,
+                padding: '16px',
+                background: 'var(--bg-secondary)',
+                overflowY: 'auto',
                 display: 'flex',
                 flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '30px',
-                textAlign: 'center',
-                color: 'var(--accent-neon-pink)'
+                justifyContent: 'center'
               }}>
-                <Camera size={64} style={{ marginBottom: '16px', opacity: 0.5 }} />
-                <h3 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>카메라 연결 끊김</h3>
-                <p style={{ color: 'var(--text-muted)', maxWidth: '400px', marginBottom: '20px' }}>{cameraError}</p>
-                <button onClick={startCamera} className="btn-secondary">
-                  <RefreshCw size={16} /> 재연결 시도
-                </button>
-              </div>
-            )}
-
-            {/* Grid Overlay */}
-            {showGrid && streamActive && (
-              <div style={{
-                position: 'absolute',
-                inset: 0,
-                pointerEvents: 'none',
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr 1fr',
-                gridTemplateRows: '1fr 1fr 1fr'
-              }}>
-                <div style={{ borderRight: '1px solid rgba(255,255,255,0.15)', borderBottom: '1px solid rgba(255,255,255,0.15)' }} />
-                <div style={{ borderRight: '1px solid rgba(255,255,255,0.15)', borderBottom: '1px solid rgba(255,255,255,0.15)' }} />
-                <div style={{ borderBottom: '1px solid rgba(255,255,255,0.15)' }} />
-                <div style={{ borderRight: '1px solid rgba(255,255,255,0.15)', borderBottom: '1px solid rgba(255,255,255,0.15)' }} />
-                <div style={{ borderRight: '1px solid rgba(255,255,255,0.15)', borderBottom: '1px solid rgba(255,255,255,0.15)' }} />
-                <div style={{ borderBottom: '1px solid rgba(255,255,255,0.15)' }} />
-                <div style={{ borderRight: '1px solid rgba(255,255,255,0.15)' }} />
-                <div style={{ borderRight: '1px solid rgba(255,255,255,0.15)' }} />
-                <div />
-              </div>
-            )}
-
-            {/* Status Header inside viewport */}
-            {streamActive && (
-              <div style={{
-                position: 'absolute',
-                top: '16px',
-                left: '16px',
-                right: '16px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                pointerEvents: 'none'
-              }}>
-                <div style={{
-                  background: 'rgba(0,0,0,0.65)',
-                  backdropFilter: 'blur(8px)',
-                  padding: '6px 14px',
-                  borderRadius: '99px',
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  border: '1px solid var(--border-glass)'
-                }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: isCapturingSession ? 'var(--accent-neon-pink)' : '#10b981' }} />
-                  {isCapturingSession ? `촬영 진행 중 • ${currentShotIndex}/4번째 컷` : '촬영 준비 완료'}
+                <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '14px', textAlign: 'center', color: 'var(--text-main)' }}>
+                  📸 아래 사진 중 4장을 마음에 드는 순서대로 터치해 주세요!
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+                  {capturedPhotos.map((photo, index) => {
+                    const selIndex = selectedPhotoIndices.indexOf(index);
+                    const isSelected = selIndex !== -1;
+                    return (
+                      <div
+                        key={index}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedPhotoIndices(prev => prev.filter(i => i !== index));
+                          } else if (selectedPhotoIndices.length < 4) {
+                            setSelectedPhotoIndices(prev => [...prev, index]);
+                          }
+                        }}
+                        style={{
+                          position: 'relative',
+                          aspectRatio: cameraAspectRatio,
+                          borderRadius: '12px',
+                          overflow: 'hidden',
+                          cursor: 'pointer',
+                          border: isSelected ? '3px solid var(--accent-neon-pink)' : '2px solid var(--border-glass)',
+                          boxShadow: isSelected ? '0 0 15px rgba(255, 77, 128, 0.45)' : 'none',
+                          transition: 'all 0.2s ease',
+                          transform: isSelected ? 'scale(0.96)' : 'none'
+                        }}
+                      >
+                        <img src={photo} alt={`Photo ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        {isSelected ? (
+                          <div style={{
+                            position: 'absolute',
+                            top: '6px',
+                            left: '6px',
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            background: 'var(--accent-neon-pink)',
+                            color: '#ffffff',
+                            fontWeight: 900,
+                            fontSize: '0.85rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+                            border: '1.5px solid #ffffff'
+                          }}>
+                            {selIndex + 1}
+                          </div>
+                        ) : (
+                          <div style={{
+                            position: 'absolute',
+                            top: '6px',
+                            left: '6px',
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            background: 'rgba(0,0,0,0.5)',
+                            color: 'rgba(255,255,255,0.8)',
+                            fontWeight: 600,
+                            fontSize: '0.75rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: '1.5px solid rgba(255,255,255,0.4)'
+                          }}>
+                            {index + 1}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
+            ) : (
+              <>
+                {/* Flash screen effect */}
+                {flash && (
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: '#ffffff',
+                    zIndex: 40,
+                    opacity: 0.95
+                  }} className="animate-flash" />
+                )}
+
+                {/* Countdown Overlay */}
+                {countdown !== null && countdown > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '20px',
+                    right: '20px',
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: '50%',
+                    background: 'rgba(244, 63, 94, 0.85)',
+                    boxShadow: '0 0 20px rgba(244, 63, 94, 0.6)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 30,
+                    border: '2px solid #ffffff'
+                  }}>
+                    <div className="animate-countdown" style={{
+                      fontSize: '2.4rem',
+                      fontWeight: 900,
+                      color: '#ffffff'
+                    }}>
+                      {countdown}
+                    </div>
+                  </div>
+                )}
+
+                {/* Video Element */}
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    transform: mirrored ? 'scaleX(-1)' : 'none',
+                    display: streamActive ? 'block' : 'none'
+                  }}
+                />
+
+                {/* Hidden canvas for capturing frame */}
+                <canvas ref={hiddenCanvasRef} style={{ display: 'none' }} />
+
+                {/* Camera Error Message */}
+                {cameraError && (
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '30px',
+                    textAlign: 'center',
+                    color: 'var(--accent-neon-pink)'
+                  }}>
+                    <Camera size={64} style={{ marginBottom: '16px', opacity: 0.5 }} />
+                    <h3 style={{ fontSize: '1.25rem', marginBottom: '8px' }}>카메라 연결 끊김</h3>
+                    <p style={{ color: 'var(--text-muted)', maxWidth: '400px', marginBottom: '20px' }}>{cameraError}</p>
+                    <button onClick={startCamera} className="btn-secondary">
+                      <RefreshCw size={16} /> 재연결 시도
+                    </button>
+                  </div>
+                )}
+
+                {/* Grid Overlay */}
+                {showGrid && streamActive && (
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    pointerEvents: 'none',
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr 1fr',
+                    gridTemplateRows: '1fr 1fr 1fr'
+                  }}>
+                    <div style={{ borderRight: '1px solid rgba(255,255,255,0.15)', borderBottom: '1px solid rgba(255,255,255,0.15)' }} />
+                    <div style={{ borderRight: '1px solid rgba(255,255,255,0.15)', borderBottom: '1px solid rgba(255,255,255,0.15)' }} />
+                    <div style={{ borderBottom: '1px solid rgba(255,255,255,0.15)' }} />
+                    <div style={{ borderRight: '1px solid rgba(255,255,255,0.15)', borderBottom: '1px solid rgba(255,255,255,0.15)' }} />
+                    <div style={{ borderRight: '1px solid rgba(255,255,255,0.15)', borderBottom: '1px solid rgba(255,255,255,0.15)' }} />
+                    <div style={{ borderBottom: '1px solid rgba(255,255,255,0.15)' }} />
+                    <div style={{ borderRight: '1px solid rgba(255,255,255,0.15)' }} />
+                    <div style={{ borderRight: '1px solid rgba(255,255,255,0.15)' }} />
+                    <div />
+                  </div>
+                )}
+
+                {/* Status Header inside viewport */}
+                {streamActive && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '16px',
+                    left: '16px',
+                    right: '16px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    pointerEvents: 'none'
+                  }}>
+                    <div style={{
+                      background: 'rgba(0,0,0,0.65)',
+                      backdropFilter: 'blur(8px)',
+                      padding: '6px 14px',
+                      borderRadius: '99px',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      border: '1px solid var(--border-glass)'
+                    }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: isCapturingSession ? 'var(--accent-neon-pink)' : '#10b981' }} />
+                      {isCapturingSession ? `촬영 진행 중 • ${currentShotIndex}/8번째 컷` : '촬영 준비 완료'}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
 
-        {/* 3. Bottom Section: 4-Cut Preview Strip Tray */}
+        {/* 3. Bottom Section: 8-slot row or 4-cut selection preview */}
         <div className="glass-card preview-sidebar-card" style={{ padding: '24px', width: '100%', maxWidth: '580px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Sparkles size={18} className="neon-text" /> 4컷 촬영 현황
+          <h2 style={{ fontSize: '1.15rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Sparkles size={18} className="neon-text" /> 
+            {capturedPhotos.length === 8 ? '인화할 4컷 선택 결과' : `실시간 촬영 기록 (${capturedPhotos.length}/8)`}
           </h2>
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-            {[0, 1, 2, 3].map((index) => {
-              const photo = capturedPhotos[index];
-              const isCurrent = isCapturingSession && currentShotIndex === index + 1;
-
-              return (
-                <div key={index} className={`preview-slot ${isCurrent ? 'current' : ''}`} style={{ aspectRatio: cameraAspectRatio, borderRadius: '12px', overflow: 'hidden', border: isCurrent ? '2px solid var(--accent-neon-pink)' : '1px solid var(--border-glass)', background: 'var(--bg-tertiary)', position: 'relative' }}>
-                  {photo ? (
-                    <img src={photo} alt={`Shot ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-subtle)', textAlign: 'center', padding: '4px' }}>
-                      {isCurrent ? `진행중` : `${index + 1}번`}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          {capturedPhotos.length === 8 ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+              {[0, 1, 2, 3].map((index) => {
+                const selIndex = selectedPhotoIndices[index];
+                const photo = selIndex !== undefined ? capturedPhotos[selIndex] : null;
+                return (
+                  <div key={index} style={{ aspectRatio: cameraAspectRatio, borderRadius: '12px', overflow: 'hidden', border: photo ? '2px solid var(--accent-neon-pink)' : '1.5px dashed var(--border-highlight)', background: 'var(--bg-tertiary)', position: 'relative' }}>
+                    {photo ? (
+                      <>
+                        <img src={photo} alt={`Selected ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div style={{
+                          position: 'absolute',
+                          bottom: '6px',
+                          right: '6px',
+                          background: 'rgba(0,0,0,0.7)',
+                          color: '#fff',
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          padding: '2px 6px',
+                          borderRadius: '4px'
+                        }}>
+                          {index + 1}번 컷
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-subtle)' }}>
+                        {index + 1}번 컷 선택
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '8px' }}>
+              {[0, 1, 2, 3, 4, 5, 6, 7].map((index) => {
+                const photo = capturedPhotos[index];
+                const isCurrent = isCapturingSession && currentShotIndex === index + 1;
+                return (
+                  <div key={index} style={{ aspectRatio: cameraAspectRatio, borderRadius: '8px', overflow: 'hidden', border: isCurrent ? '2px solid var(--accent-neon-pink)' : '1px solid var(--border-glass)', background: 'var(--bg-tertiary)', position: 'relative' }}>
+                    {photo ? (
+                      <img src={photo} alt={`Shot ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-subtle)' }}>
+                        {isCurrent ? '●' : index + 1}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
       </div>

@@ -235,7 +235,7 @@ export const PhotoEditor: React.FC<PhotoEditorProps> = ({ photos, layout, onBack
               type="text"
               value={footerText}
               onChange={(e) => setFooterText(e.target.value)}
-              placeholder="예: 인생네컷 • 홍대점"
+              placeholder="예: 뽀토부스 • 얄루"
               maxLength={28}
               style={{
                 width: '100%',
