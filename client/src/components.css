@@ -67,6 +67,163 @@
   background: linear-gradient(135deg, #e2e8f0, #94a3b8, #cbd5e1);
 }
 
+/* Desktop Defaults */
+.nav-header {
+  margin: 16px auto;
+  max-width: 1280px;
+  padding: 16px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 16px;
+  z-index: 50;
+}
+
+.step-indicator-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.step-line {
+  width: 20px;
+  height: 2px;
+  background: var(--border-glass);
+}
+
+.camera-booth-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 28px;
+  align-items: start;
+}
+
+.preview-sidebar-card {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.preview-slots-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  margin-bottom: 24px;
+}
+
+.preview-slot {
+  aspect-ratio: 4 / 3;
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid var(--border-glass);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.preview-slot.current {
+  border: 2px solid var(--accent-neon-pink);
+  box-shadow: 0 0 15px rgba(244, 63, 94, 0.3);
+}
+
+.slot-placeholder-text {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-subtle);
+}
+
+.preview-slot.current .slot-placeholder-text {
+  color: var(--accent-neon-pink);
+}
+
+.photo-editor-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 32px;
+  align-items: start;
+}
+
+.share-modal-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap: 36px;
+  align-items: start;
+}
+
+/* Responsive Media Queries (Mobile & Tablet Optimization) */
+@media (max-width: 1024px) {
+  .camera-booth-layout,
+  .photo-editor-layout,
+  .share-modal-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .preview-sidebar-card {
+    width: 100%;
+  }
+
+  .preview-slots-container {
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .preview-slot {
+    flex: 1;
+    aspect-ratio: 4 / 3;
+  }
+
+  .slot-placeholder-text {
+    font-size: 0.7rem;
+    text-align: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-header {
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+    align-items: center;
+    position: relative;
+    top: 0;
+    margin: 8px;
+  }
+
+  .nav-title-box {
+    text-align: center;
+  }
+
+  .step-indicator-container {
+    width: 100%;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .step-line {
+    width: 10px;
+  }
+
+  .step-badge {
+    padding: 6px 10px !important;
+    font-size: 0.75rem !important;
+  }
+
+  .nav-controls {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 /* Print specific styles */
 @media print {
   body * {

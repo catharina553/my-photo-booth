@@ -119,13 +119,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, onReset }) => {
   };
 
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 28px 60px' }} className="animate-fade-in">
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1fr) 420px',
-        gap: '36px',
-        alignItems: 'start'
-      }}>
+    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 28px 60px' }} className="animate-fade-in share-wrapper">
+      <div className="share-modal-layout">
         {/* Left: Finished Canvas Display */}
         <div className="glass-card" style={{
           padding: '28px',

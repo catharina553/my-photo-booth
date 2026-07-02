@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Palette, Layout, Sliders, Type, ArrowLeft, QrCode, Sparkles } from 'lucide-react';
+import { Palette, Layout, Sliders, Type, ArrowLeft, QrCode, Sparkles, Upload } from 'lucide-react';
 import type { FrameLayout, PhotoFilter, RenderConfig } from '../utils/canvasRenderer';
 import { renderPhotoBoothCanvas } from '../utils/canvasRenderer';
 
@@ -34,6 +34,21 @@ export const PhotoEditor: React.FC<PhotoEditorProps> = ({ photos, onBack, onFini
   const [filter, setFilter] = useState<PhotoFilter>('normal');
   const [footerText, setFooterText] = useState<string>('인생네컷 • 스튜디오');
   const [dateStr] = useState<string>(new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }));
+  const [customFrameName, setCustomFrameName] = useState<string | null>(null);
+
+  const handleCustomFrameUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setFrameColor(event.target.result as string);
+        setCustomFrameName(file.name);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const currentCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -87,13 +102,8 @@ export const PhotoEditor: React.FC<PhotoEditorProps> = ({ photos, onBack, onFini
   };
 
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 28px 40px' }} className="animate-fade-in">
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1fr) 380px',
-        gap: '32px',
-        alignItems: 'start'
-      }}>
+    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 28px 40px' }} className="animate-fade-in editor-wrapper">
+      <div className="photo-editor-layout">
         {/* Left: High-Res Canvas Preview Area */}
         <div className="glass-card" style={{
           padding: '24px',
@@ -214,6 +224,20 @@ export const PhotoEditor: React.FC<PhotoEditorProps> = ({ photos, onBack, onFini
                   />
                 );
               })}
+            </div>
+            <div style={{ marginTop: '16px' }}>
+              <label className="btn-secondary" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', padding: '12px', border: '1px dashed var(--accent-neon-cyan)', borderRadius: '12px', background: 'rgba(6, 182, 212, 0.05)', width: '100%' }}>
+                <Upload size={16} color="var(--accent-neon-cyan)" />
+                <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
+                  {customFrameName ? `커스텀: ${customFrameName.substring(0, 16)}...` : '커스텀 PNG 프레임 업로드'}
+                </span>
+                <input
+                  type="file"
+                  accept="image/png"
+                  onChange={handleCustomFrameUpload}
+                  style={{ display: 'none' }}
+                />
+              </label>
             </div>
           </div>
 

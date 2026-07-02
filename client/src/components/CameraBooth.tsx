@@ -150,15 +150,10 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ onComplete }) => {
   };
 
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 28px 40px' }} className="animate-fade-in">
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1fr) 340px',
-        gap: '28px',
-        alignItems: 'start'
-      }}>
+    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 28px 40px' }} className="animate-fade-in camera-booth-wrapper">
+      <div className="camera-booth-layout">
         {/* Main Camera Viewport */}
-        <div className="glass-card" style={{ padding: '20px', position: 'relative', overflow: 'hidden' }}>
+        <div className="glass-card camera-viewport-card" style={{ padding: '20px', position: 'relative', overflow: 'hidden' }}>
           <div style={{
             position: 'relative',
             width: '100%',
@@ -350,7 +345,7 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ onComplete }) => {
         </div>
 
         {/* Right Sidebar: 4-Cut Live Progress Strip */}
-        <div className="glass-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div className="glass-card preview-sidebar-card">
           <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Sparkles size={18} className="neon-text" /> 4컷 미리보기
           </h2>
@@ -360,39 +355,18 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ onComplete }) => {
               : `자동으로 4컷이 촬영됩니다. (${timerSeconds}초 타이머)`}
           </p>
 
-          {/* 4-Cut Vertical Slots */}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px',
-            flex: 1,
-            marginBottom: '24px'
-          }}>
+          {/* 4-Cut Slots */}
+          <div className="preview-slots-container">
             {[0, 1, 2, 3].map((index) => {
               const photo = capturedPhotos[index];
               const isCurrent = isCapturingSession && currentShotIndex === index + 1;
 
               return (
-                <div key={index} style={{
-                  aspectRatio: '4 / 3',
-                  background: 'var(--bg-tertiary)',
-                  borderRadius: '12px',
-                  overflow: 'hidden',
-                  position: 'relative',
-                  border: isCurrent ? '2px solid var(--accent-neon-pink)' : '1px solid var(--border-glass)',
-                  boxShadow: isCurrent ? '0 0 15px rgba(244,63,94,0.3)' : 'none',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
+                <div key={index} className={`preview-slot ${isCurrent ? 'current' : ''}`}>
                   {photo ? (
                     <img src={photo} alt={`Shot ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
-                    <span style={{
-                      fontSize: '0.85rem',
-                      fontWeight: 700,
-                      color: isCurrent ? 'var(--accent-neon-pink)' : 'var(--text-subtle)'
-                    }}>
+                    <span className="slot-placeholder-text">
                       {isCurrent ? `${index + 1}번째 컷 촬영 중...` : `${index + 1}번째 컷`}
                     </span>
                   )}

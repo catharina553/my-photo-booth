@@ -16,19 +16,10 @@ export const Navbar: React.FC<NavbarProps> = ({ currentStep, onReset }) => {
   };
 
   return (
-    <header className="glass-card no-print" style={{
-      margin: '16px auto',
-      maxWidth: '1280px',
-      padding: '16px 28px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      position: 'sticky',
-      top: '16px',
-      zIndex: 50
-    }}>
+    <header className="glass-card no-print nav-header">
       <div 
         onClick={onReset}
+        className="nav-logo"
         style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
       >
         <div style={{
@@ -44,7 +35,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentStep, onReset }) => {
         }}>
           <Camera size={24} />
         </div>
-        <div>
+        <div className="nav-title-box">
           <h1 style={{ fontSize: '1.4rem', fontWeight: 900, lineHeight: 1.1 }}>
             LIFE <span className="neon-text">4</span> CUTS
           </h1>
@@ -55,16 +46,16 @@ export const Navbar: React.FC<NavbarProps> = ({ currentStep, onReset }) => {
       </div>
 
       {/* Step Indicator */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div className="step-indicator-container">
         <StepBadge step={1} label="1. 사진 촬영" active={currentStep === 'capture'} done={currentStep !== 'capture'} />
-        <div style={{ width: '20px', height: '2px', background: 'var(--border-glass)' }} />
+        <div className="step-line" />
         <StepBadge step={2} label="2. 프레임 꾸미기" active={currentStep === 'customize'} done={currentStep === 'share'} />
-        <div style={{ width: '20px', height: '2px', background: 'var(--border-glass)' }} />
+        <div className="step-line" />
         <StepBadge step={3} label="3. 인쇄 & 공유" active={currentStep === 'share'} done={false} />
       </div>
 
       {/* Sound & Controls */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div className="nav-controls" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <button
           onClick={handleToggleSound}
           className="btn-secondary"
