@@ -54,7 +54,7 @@ router.get('/network', (req: Request, res: Response) => {
 });
 
 // Upload a new 4-cut photo
-router.post('/photos', (req: Request, res: Response): void => {
+router.post('/photos', async (req: Request, res: Response): Promise<void> => {
   try {
     const { title = 'Life4Cuts Session', frameColor = '#ffffff', layout = '2x6-strip-pair', imageDataUrl } = req.body;
     
@@ -76,22 +76,23 @@ router.post('/photos', (req: Request, res: Response): void => {
       filename
     }, imageDataUrl);
 
-    // Upload to Google Drive in the background (asynchronous, does not block response)
+    // Upload to Google Drive (awaited to keep Render instance active and avoid cold execution freeze)
     const localFilePath = path.join(__dirname, '../uploads', filename);
-    uploadToGoogleDrive(localFilePath, filename)
-      .then(link => {
-        if (link) {
-          console.log(`🔗 [Google Drive] Photo successfully auto-saved to cloud: ${link}`);
-        }
-      })
-      .catch(err => {
-        console.error('❌ [Google Drive] Background upload failed:', err);
-      });
+    let driveLink: string | null = null;
+    try {
+      driveLink = await uploadToGoogleDrive(localFilePath, filename);
+      if (driveLink) {
+        console.log(`🔗 [Google Drive] Photo successfully auto-saved to cloud: ${driveLink}`);
+      }
+    } catch (driveErr) {
+      console.error('❌ [Google Drive] Upload exception:', driveErr);
+    }
     
     res.status(201).json({
       success: true,
       id: record.id,
-      record
+      record,
+      driveLink
     });
   } catch (error: any) {
     console.error('Upload failed:', error);
