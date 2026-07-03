@@ -96,12 +96,27 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, onReset }) => {
   };
 
   const handleDownloadImage = () => {
-    canvas.toBlob((blob) => {
+    canvas.toBlob(async (blob) => {
       if (!blob) return;
+      
+      const file = new File([blob], `photo-${Date.now()}.png`, { type: 'image/png' });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: '뽀토부스 사진',
+            text: '뽀토부스에서 촬영한 사진입니다.'
+          });
+          return;
+        } catch (err) {
+          console.log('Share canceled or failed:', err);
+        }
+      }
+
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `life4cuts-${Date.now()}.png`;
+      link.download = `photo-${Date.now()}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

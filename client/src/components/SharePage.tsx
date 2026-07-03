@@ -54,30 +54,36 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
   const handleDownloadMobile = async () => {
     if (!imageUrl) return;
 
-    // Detect if iOS, Android, or common in-app browsers
-    const ua = navigator.userAgent.toLowerCase();
-    const isMobileDevice = /iphone|ipad|ipod|android/i.test(ua);
-    const isInAppBrowser = /kakaotalk|instagram|line|fbav|twitter/i.test(ua);
-
-    if (isMobileDevice || isInAppBrowser) {
-      // Open in a new tab/window instead of redirecting, so the user doesn't leave the current page!
-      window.open(imageUrl, '_blank');
-      return;
-    }
-
     try {
       const response = await fetch(imageUrl);
       const blob = await response.blob();
+      const file = new File([blob], `photo-${photoId}.png`, { type: 'image/png' });
+
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: '뽀토부스 사진',
+            text: '오늘 찍은 뽀토부스 사진입니다.'
+          });
+          return;
+        } catch (err) {
+          console.log('Share canceled or failed:', err);
+        }
+      }
+
+      // Fallback: If Web Share API is not supported or canceled
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `photo-${photoId}.png`;
+      a.target = '_blank';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (e) {
-      window.location.href = imageUrl;
+      window.open(imageUrl, '_blank');
     }
   };
 
