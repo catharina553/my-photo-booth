@@ -226,10 +226,10 @@ export const PhotoEditor: React.FC<PhotoEditorProps> = ({ photos, layout, onBack
             </div>
           </div>
 
-          {/* 4. Custom Footer Text */}
+          {/* 4. Custom Header Text */}
           <div>
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-muted)' }}>
-              <Type size={18} /> 하단 문구 입력
+              <Type size={18} /> 상단 문구 입력
             </label>
             <input
               type="text"
