@@ -63,7 +63,14 @@ async function getAccessToken(email: string, privateKey: string): Promise<string
 }
 
 export async function uploadToGoogleDrive(filePath: string, filename: string): Promise<string | null> {
-  const serviceAccountKeyStr = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  let serviceAccountKeyStr = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  const defaultSecretPath = '/etc/secrets/google-key.json';
+
+  if (!serviceAccountKeyStr && fs.existsSync(defaultSecretPath)) {
+    serviceAccountKeyStr = defaultSecretPath;
+    console.log(`ℹ️ [Google Drive] Auto-detected Google Service Account Key file at: ${defaultSecretPath}`);
+  }
+
   if (!serviceAccountKeyStr) {
     console.warn('⚠️ [Google Drive] GOOGLE_SERVICE_ACCOUNT_KEY is not set. Google Drive auto-save is disabled.');
     return null;
@@ -75,8 +82,39 @@ export async function uploadToGoogleDrive(filePath: string, filename: string): P
   }
 
   try {
-    const credentials = JSON.parse(serviceAccountKeyStr);
-    const accessToken = await getAccessToken(credentials.client_email, credentials.private_key);
+    let credentialsJson = '';
+    
+    // 1. Check if it's a file path
+    if (fs.existsSync(serviceAccountKeyStr)) {
+      credentialsJson = fs.readFileSync(serviceAccountKeyStr, 'utf8');
+      console.log('✅ [Google Drive] Loaded Service Account Key from file.');
+    } 
+    // 2. Check if it's base64 encoded
+    else if (serviceAccountKeyStr.trim().startsWith('{') === false) {
+      try {
+        const decoded = Buffer.from(serviceAccountKeyStr.trim(), 'base64').toString('utf8');
+        if (decoded.trim().startsWith('{')) {
+          credentialsJson = decoded;
+          console.log('✅ [Google Drive] Loaded Service Account Key from base64 string.');
+        }
+      } catch (e) {
+        // Not base64
+      }
+    }
+
+    // 3. Fallback to raw JSON string
+    if (!credentialsJson) {
+      credentialsJson = serviceAccountKeyStr;
+    }
+
+    const credentials = JSON.parse(credentialsJson);
+    if (!credentials.client_email || !credentials.private_key) {
+      throw new Error('Google Service Account Key is missing client_email or private_key fields.');
+    }
+
+    // Format newlines correctly (essential when key is parsed from env variables)
+    const privateKey = credentials.private_key.replace(/\\n/g, '\n');
+    const accessToken = await getAccessToken(credentials.client_email, privateKey);
 
     const boundary = 'xx_bbotobooth_boundary_xx';
     const metadata: any = {
@@ -100,6 +138,9 @@ export async function uploadToGoogleDrive(filePath: string, filename: string): P
 
     const mediaFooter = `\r\n--${boundary}--\r\n`;
 
+    if (!fs.existsSync(filePath)) {
+      throw new Error(`Local file not found at: ${filePath}`);
+    }
     const fileBuffer = fs.readFileSync(filePath);
     
     // Concatenate all parts into a single buffer
@@ -128,8 +169,8 @@ export async function uploadToGoogleDrive(filePath: string, filename: string): P
     const resData: any = await uploadResponse.json();
     console.log(`✅ [Google Drive] File uploaded successfully. File ID: ${resData.id}`);
     return resData.webViewLink || null;
-  } catch (error) {
-    console.error('❌ [Google Drive] Upload failed:', error);
+  } catch (error: any) {
+    console.error('❌ [Google Drive] Upload failed:', error.message || error);
     return null;
   }
 }
