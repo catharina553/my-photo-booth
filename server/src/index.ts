@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { router } from './routes';
-import { getPhotoRecord, cleanupExpiredPhotos } from './storage';
+import { getPhotoRecord, cleanupExpiredPhotos, UPLOADS_DIR } from './storage';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -57,7 +57,7 @@ app.use((req, res, next) => {
 });
 
 // Serve stored photos statically
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/uploads', express.static(UPLOADS_DIR));
 
 // API Routes
 app.use('/api', router);

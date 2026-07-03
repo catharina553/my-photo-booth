@@ -3,7 +3,7 @@ import os from 'os';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import { savePhotoRecord, getPhotoRecord, getAllPhotos } from './storage';
+import { savePhotoRecord, getPhotoRecord, getAllPhotos, UPLOADS_DIR } from './storage';
 import { uploadToGoogleDrive } from './googleDrive';
 
 export const router = Router();
@@ -77,15 +77,20 @@ router.post('/photos', async (req: Request, res: Response): Promise<void> => {
     }, imageDataUrl);
 
     // Upload to Google Drive (awaited to keep Render instance active and avoid cold execution freeze)
-    const localFilePath = path.join(__dirname, '../uploads', filename);
+    const localFilePath = path.join(UPLOADS_DIR, filename);
     let driveLink: string | null = null;
     try {
       driveLink = await uploadToGoogleDrive(localFilePath, filename);
       if (driveLink) {
         console.log(`🔗 [Google Drive] Photo successfully auto-saved to cloud: ${driveLink}`);
+      } else {
+        throw new Error('uploadToGoogleDrive returned null (failed internally, check Google Drive logs)');
       }
-    } catch (driveErr) {
-      console.error('❌ [Google Drive] Upload exception:', driveErr);
+    } catch (driveErr: any) {
+      console.error("====== 구글 드라이브 업로드 치명적 에러 ======");
+      console.error("에러 메시지:", driveErr.message || driveErr);
+      console.error("에러 상세:", driveErr);
+      console.error("=========================================");
     }
     
     res.status(201).json({

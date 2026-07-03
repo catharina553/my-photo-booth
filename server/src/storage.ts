@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 export interface PhotoRecord {
   id: string;
@@ -10,7 +11,7 @@ export interface PhotoRecord {
   filename: string;
 }
 
-const UPLOADS_DIR = path.join(__dirname, '../uploads');
+export const UPLOADS_DIR = path.join(os.tmpdir(), 'bbotobooth_uploads');
 const DB_FILE = path.join(UPLOADS_DIR, 'db.json');
 
 if (!fs.existsSync(UPLOADS_DIR)) {
