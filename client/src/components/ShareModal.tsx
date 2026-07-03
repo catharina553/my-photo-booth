@@ -30,7 +30,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, onReset }) => {
     uploadCanvasToBackend();
   }, []);
 
-  const uploadCanvasToBackend = async () => {
+  const uploadCanvasToBackend = async (retryCount = 0) => {
     setIsUploading(true);
     setUploadError(null);
     try {
@@ -79,12 +79,19 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, onReset }) => {
           : `${window.location.protocol}//${window.location.host}/?share=${data.id}`;
         
         setShareUrl(mobileShareLink);
+        setIsUploading(false);
       }
     } catch (err: any) {
-      console.error('Upload error:', err);
-      setUploadError('로컬 백엔드 서버와 연결이 원활하지 않습니다. 하지만 고해상도 직접 다운로드는 아래 버튼을 통해 가능합니다!');
-    } finally {
-      setIsUploading(false);
+      console.error(`Upload error (attempt ${retryCount + 1}):`, err);
+      if (retryCount < 2) {
+        console.log(`Auto-retrying upload in 1.5s... (Attempt ${retryCount + 1}/2)`);
+        setTimeout(() => {
+          uploadCanvasToBackend(retryCount + 1);
+        }, 1500);
+      } else {
+        setUploadError('로컬 백엔드 서버와 연결이 원활하지 않습니다. 하지만 고해상도 직접 다운로드는 아래 버튼을 통해 가능합니다!');
+        setIsUploading(false);
+      }
     }
   };
 
@@ -178,8 +185,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, onReset }) => {
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>로컬 포토부스 서버에 연결하는 중...</p>
               </div>
             ) : uploadError ? (
-              <div style={{ padding: '20px 0', color: 'var(--accent-neon-pink)' }}>
-                <p style={{ fontSize: '0.9rem', fontWeight: 600 }}>{uploadError}</p>
+              <div style={{ padding: '16px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
+                <p style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--accent-neon-pink)', lineHeight: 1.5 }}>{uploadError}</p>
+                <button
+                  onClick={() => uploadCanvasToBackend(0)}
+                  className="btn-secondary"
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '10px', fontSize: '0.85rem' }}
+                >
+                  <RefreshCw size={14} /> QR 코드 생성 재시도
+                </button>
               </div>
             ) : (
               <>
