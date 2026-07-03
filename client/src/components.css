@@ -94,16 +94,31 @@
 
 .camera-booth-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 28px;
+  grid-template-columns: minmax(0, 1.2fr) 1fr;
+  grid-template-rows: auto auto;
+  gap: 24px;
   align-items: start;
 }
 
+.camera-viewport-card {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  width: 100%;
+}
+
+.controls-top-card {
+  grid-column: 2;
+  grid-row: 1;
+  width: 100%;
+}
+
 .preview-sidebar-card {
+  grid-column: 2;
+  grid-row: 2;
+  width: 100%;
   padding: 24px;
   display: flex;
   flex-direction: column;
-  height: 100%;
 }
 
 .preview-slots-container {
@@ -157,17 +172,29 @@
 }
 
 /* Responsive Media Queries (Mobile & Tablet Optimization) */
-@media (max-width: 767px) {
+@media (max-width: 991px) {
   .camera-booth-layout,
   .photo-editor-layout,
   .share-modal-layout {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    align-items: center;
+  }
+
+  .controls-top-card {
+    order: 1;
+    max-width: 640px;
+  }
+
+  .camera-viewport-card {
+    order: 2;
+    max-width: 640px;
   }
 
   .preview-sidebar-card {
-    width: 100%;
+    order: 3;
+    max-width: 640px;
   }
 
   .preview-slots-container {
