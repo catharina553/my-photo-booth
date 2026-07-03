@@ -157,7 +157,7 @@
 }
 
 /* Responsive Media Queries (Mobile & Tablet Optimization) */
-@media (max-width: 1024px) {
+@media (max-width: 767px) {
   .camera-booth-layout,
   .photo-editor-layout,
   .share-modal-layout {

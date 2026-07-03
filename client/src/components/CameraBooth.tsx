@@ -162,112 +162,17 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
   const cameraAspectRatio = layout === '2x6-strip-pair' ? '480 / 340' : '510 / 660';
 
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 28px 40px' }} className="animate-fade-in camera-booth-wrapper">
-      <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-start' }}>
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px 24px' }} className="animate-fade-in camera-booth-wrapper">
+      <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'flex-start' }}>
         <button onClick={onBack} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '12px' }}>
           <ArrowLeft size={16} /> 규격 다시 선택
         </button>
       </div>
 
-      <div className="camera-booth-layout" style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'center' }}>
+      <div className="camera-booth-layout">
         
-        {/* 1. Top Section: Settings & Action Panel */}
-        <div className="glass-card controls-top-card" style={{ padding: '24px', width: '100%', maxWidth: '580px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Action Buttons Row */}
-          <div>
-            {capturedPhotos.length < 8 ? (
-              <button
-                onClick={startAutomatedSession}
-                disabled={!streamActive || isCapturingSession}
-                className="btn-primary"
-                style={{ width: '100%', padding: '16px', fontSize: '1.1rem', borderRadius: '16px' }}
-              >
-                <Play size={20} fill="currentColor" />
-                {isCapturingSession ? `순차 촬영 진행 중... (${currentShotIndex}/8번째 컷)` : '📸 8컷 촬영 시작'}
-              </button>
-            ) : (
-              <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
-                <button
-                  onClick={() => {
-                    const orderedPhotos = selectedPhotoIndices.map(i => capturedPhotos[i]);
-                    onComplete(orderedPhotos);
-                  }}
-                  disabled={selectedPhotoIndices.length !== 4}
-                  className="btn-primary"
-                  style={{ flex: 2, padding: '16px', borderRadius: '16px', opacity: selectedPhotoIndices.length === 4 ? 1 : 0.6 }}
-                >
-                  <Check size={20} /> 🎨 프레임 선택 및 꾸미기 ({selectedPhotoIndices.length}/4)
-                </button>
-                <button
-                  onClick={handleRetakeAll}
-                  className="btn-secondary"
-                  style={{ flex: 1, borderRadius: '16px' }}
-                >
-                  <RefreshCw size={16} /> 다시 촬영
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Settings Row */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '16px',
-            flexWrap: 'wrap'
-          }}>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                onClick={() => setMirrored(!mirrored)}
-                className="btn-secondary"
-                disabled={isCapturingSession || capturedPhotos.length === 8}
-                title="화면 좌우 반전"
-                style={{ padding: '8px 14px', borderRadius: '12px' }}
-              >
-                <FlipHorizontal size={18} /> {mirrored ? '좌우 반전' : '기본 화면'}
-              </button>
-              <button
-                onClick={() => setShowGrid(!showGrid)}
-                className="btn-secondary"
-                disabled={isCapturingSession || capturedPhotos.length === 8}
-                title="가이드 격자 토글"
-                style={{ padding: '8px 14px', borderRadius: '12px' }}
-              >
-                <Grid size={18} /> {showGrid ? '격자 켜짐' : '격자 꺼짐'}
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>
-                <Clock size={16} />
-                <span>타이머:</span>
-              </div>
-              {[3, 5, 10].map(sec => (
-                <button
-                  key={sec}
-                  onClick={() => setTimerSeconds(sec)}
-                  disabled={isCapturingSession || capturedPhotos.length === 8}
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: '10px',
-                    background: timerSeconds === sec ? 'var(--accent-neon-cyan)' : 'var(--bg-tertiary)',
-                    color: timerSeconds === sec ? '#000' : 'var(--text-main)',
-                    fontWeight: 700,
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  {sec}s
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* 2. Middle Section: Camera Viewport or Photo Selection Grid */}
-        <div className="glass-card camera-viewport-card" style={{ padding: '20px', width: '100%', maxWidth: '580px', position: 'relative', overflow: 'hidden' }}>
+        {/* Left Column: Camera Viewport */}
+        <div className="glass-card camera-viewport-card" style={{ padding: '20px', position: 'relative', overflow: 'hidden', width: '100%' }}>
           <div style={{
             position: 'relative',
             width: '100%',
@@ -498,65 +403,165 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
           </div>
         </div>
 
-        {/* 3. Bottom Section: 8-slot row or 4-cut selection preview */}
-        <div className="glass-card preview-sidebar-card" style={{ padding: '24px', width: '100%', maxWidth: '580px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <h2 style={{ fontSize: '1.15rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Sparkles size={18} className="neon-text" /> 
-            {capturedPhotos.length === 8 ? '인화할 4컷 선택 결과' : `실시간 촬영 기록 (${capturedPhotos.length}/8)`}
-          </h2>
+        {/* Right Column: Settings, Action Buttons & Preview slots stacked vertically */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%' }}>
           
-          {capturedPhotos.length === 8 ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-              {[0, 1, 2, 3].map((index) => {
-                const selIndex = selectedPhotoIndices[index];
-                const photo = selIndex !== undefined ? capturedPhotos[selIndex] : null;
-                return (
-                  <div key={index} style={{ aspectRatio: cameraAspectRatio, borderRadius: '12px', overflow: 'hidden', border: photo ? '2px solid var(--accent-neon-pink)' : '1.5px dashed var(--border-highlight)', background: 'var(--bg-tertiary)', position: 'relative' }}>
-                    {photo ? (
-                      <>
-                        <img src={photo} alt={`Selected ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        <div style={{
-                          position: 'absolute',
-                          bottom: '6px',
-                          right: '6px',
-                          background: 'rgba(0,0,0,0.7)',
-                          color: '#fff',
-                          fontSize: '0.7rem',
-                          fontWeight: 700,
-                          padding: '2px 6px',
-                          borderRadius: '4px'
-                        }}>
+          {/* Action & Settings Card */}
+          <div className="glass-card controls-top-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div>
+              {capturedPhotos.length < 8 ? (
+                <button
+                  onClick={startAutomatedSession}
+                  disabled={!streamActive || isCapturingSession}
+                  className="btn-primary"
+                  style={{ width: '100%', padding: '16px', fontSize: '1.1rem', borderRadius: '16px' }}
+                >
+                  <Play size={20} fill="currentColor" />
+                  {isCapturingSession ? `순차 촬영 진행 중... (${currentShotIndex}/8번째 컷)` : '📸 8컷 촬영 시작'}
+                </button>
+              ) : (
+                <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+                  <button
+                    onClick={() => {
+                      const orderedPhotos = selectedPhotoIndices.map(i => capturedPhotos[i]);
+                      onComplete(orderedPhotos);
+                    }}
+                    disabled={selectedPhotoIndices.length !== 4}
+                    className="btn-primary"
+                    style={{ flex: 2, padding: '16px', borderRadius: '16px', opacity: selectedPhotoIndices.length === 4 ? 1 : 0.6 }}
+                  >
+                    <Check size={20} /> 🎨 프레임 꾸미기 ({selectedPhotoIndices.length}/4)
+                  </button>
+                  <button
+                    onClick={handleRetakeAll}
+                    className="btn-secondary"
+                    style={{ flex: 1, borderRadius: '16px' }}
+                  >
+                    <RefreshCw size={16} /> 다시 촬영
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Settings Row */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '16px',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={() => setMirrored(!mirrored)}
+                  className="btn-secondary"
+                  disabled={isCapturingSession || capturedPhotos.length === 8}
+                  title="화면 좌우 반전"
+                  style={{ padding: '8px 14px', borderRadius: '12px' }}
+                >
+                  <FlipHorizontal size={18} /> {mirrored ? '좌우 반전' : '기본'}
+                </button>
+                <button
+                  onClick={() => setShowGrid(!showGrid)}
+                  className="btn-secondary"
+                  disabled={isCapturingSession || capturedPhotos.length === 8}
+                  title="가이드 격자 토글"
+                  style={{ padding: '8px 14px', borderRadius: '12px' }}
+                >
+                  <Grid size={18} /> {showGrid ? '격자 켜짐' : '격자 꺼짐'}
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)', fontSize: '0.85rem', fontWeight: 600 }}>
+                  <Clock size={15} />
+                  <span>타이머:</span>
+                </div>
+                {[3, 5, 10].map(sec => (
+                  <button
+                    key={sec}
+                    onClick={() => setTimerSeconds(sec)}
+                    disabled={isCapturingSession || capturedPhotos.length === 8}
+                    style={{
+                      padding: '6px 10px',
+                      borderRadius: '8px',
+                      background: timerSeconds === sec ? 'var(--accent-neon-cyan)' : 'var(--bg-tertiary)',
+                      color: timerSeconds === sec ? '#000' : 'var(--text-main)',
+                      fontWeight: 700,
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    {sec}s
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 8-slot row or 4-cut selection preview */}
+          <div className="glass-card preview-sidebar-card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Sparkles size={18} className="neon-text" /> 
+              {capturedPhotos.length === 8 ? '인화할 4컷 선택 결과' : `실시간 촬영 기록 (${capturedPhotos.length}/8)`}
+            </h2>
+            
+            {capturedPhotos.length === 8 ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                {[0, 1, 2, 3].map((index) => {
+                  const selIndex = selectedPhotoIndices[index];
+                  const photo = selIndex !== undefined ? capturedPhotos[selIndex] : null;
+                  return (
+                    <div key={index} style={{ aspectRatio: cameraAspectRatio, borderRadius: '12px', overflow: 'hidden', border: photo ? '2px solid var(--accent-neon-pink)' : '1.5px dashed var(--border-highlight)', background: 'var(--bg-tertiary)', position: 'relative' }}>
+                      {photo ? (
+                        <>
+                          <img src={photo} alt={`Selected ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <div style={{
+                            position: 'absolute',
+                            bottom: '6px',
+                            right: '6px',
+                            background: 'rgba(0,0,0,0.7)',
+                            color: '#fff',
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            padding: '2px 6px',
+                            borderRadius: '4px'
+                          }}>
+                            {index + 1}번 컷
+                          </div>
+                        </>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-subtle)' }}>
                           {index + 1}번 컷
                         </div>
-                      </>
-                    ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-subtle)' }}>
-                        {index + 1}번 컷 선택
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '8px' }}>
-              {[0, 1, 2, 3, 4, 5, 6, 7].map((index) => {
-                const photo = capturedPhotos[index];
-                const isCurrent = isCapturingSession && currentShotIndex === index + 1;
-                return (
-                  <div key={index} style={{ aspectRatio: cameraAspectRatio, borderRadius: '8px', overflow: 'hidden', border: isCurrent ? '2px solid var(--accent-neon-pink)' : '1px solid var(--border-glass)', background: 'var(--bg-tertiary)', position: 'relative' }}>
-                    {photo ? (
-                      <img src={photo} alt={`Shot ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-subtle)' }}>
-                        {isCurrent ? '●' : index + 1}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '6px' }}>
+                {[0, 1, 2, 3, 4, 5, 6, 7].map((index) => {
+                  const photo = capturedPhotos[index];
+                  const isCurrent = isCapturingSession && currentShotIndex === index + 1;
+                  return (
+                    <div key={index} style={{ aspectRatio: cameraAspectRatio, borderRadius: '8px', overflow: 'hidden', border: isCurrent ? '2px solid var(--accent-neon-pink)' : '1px solid var(--border-glass)', background: 'var(--bg-tertiary)', position: 'relative' }}>
+                      {photo ? (
+                        <img src={photo} alt={`Shot ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-subtle)' }}>
+                          {isCurrent ? '●' : index + 1}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
         </div>
 
       </div>
