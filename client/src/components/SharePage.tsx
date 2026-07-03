@@ -60,8 +60,8 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
     const isInAppBrowser = /kakaotalk|instagram|line|fbav|twitter/i.test(ua);
 
     if (isMobileDevice || isInAppBrowser) {
-      // Direct redirect is the most reliable way to show raw image for saving on mobile!
-      window.location.href = imageUrl;
+      // Open in a new tab/window instead of redirecting, so the user doesn't leave the current page!
+      window.open(imageUrl, '_blank');
       return;
     }
 

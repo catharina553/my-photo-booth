@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Printer, RefreshCw, Smartphone, Sparkles } from 'lucide-react';
+import { Download, RefreshCw, Smartphone, Sparkles } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import confetti from 'canvas-confetti';
 
@@ -102,14 +102,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, onReset }) => {
     }, 'image/png');
   };
 
-  const handlePrint = () => {
-    // We insert the canvas dataURL into hidden print area
-    const printArea = document.getElementById('print-area');
-    if (printArea) {
-      printArea.innerHTML = `<img src="${canvas.toDataURL('image/png')}" style="max-width: 100%; max-height: 100vh;" />`;
-      window.print();
-    }
-  };
+
 
   const copyShareLink = () => {
     if (!shareUrl) return;
@@ -258,15 +251,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, onReset }) => {
               className="btn-primary"
               style={{ width: '100%', padding: '16px', fontSize: '1.1rem' }}
             >
-              <Download size={22} /> 고해상도 PNG 다운로드 (300 DPI)
-            </button>
-
-            <button
-              onClick={handlePrint}
-              className="btn-secondary"
-              style={{ width: '100%', padding: '14px', fontSize: '1rem' }}
-            >
-              <Printer size={20} color="var(--accent-neon-pink)" /> 포토 인쇄 (4x6 인화지)
+              <Download size={22} /> 사진 다운로드
             </button>
 
             <div style={{ height: '1px', background: 'var(--border-glass)', margin: '6px 0' }} />
