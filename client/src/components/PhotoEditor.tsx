@@ -15,10 +15,10 @@ const FRAME_COLORS = [
   { name: '스튜디오 블랙', value: '#18181b' },
   { name: '베이비 핑크', value: '#fbcfe8' },
   { name: '스카이 블루', value: '#bae6fd' },
-  { name: '라벤더', value: '#e9d5ff' },
   { name: '민트 글로우', value: '#a7f3d0' },
   { name: '체커보드', value: 'checkerboard' },
   { name: 'Y2K 실버', value: 'y2k-silver' },
+  { name: '뽀토부스 • 얄루', value: '/templates/yallu_sheep.png' }
 ];
 
 const FILTERS: { name: string; id: PhotoFilter }[] = [
@@ -168,20 +168,26 @@ export const PhotoEditor: React.FC<PhotoEditorProps> = ({ photos, layout, onBack
               <Palette size={18} color="var(--accent-neon-pink)" /> 프레임 테마 선택
             </label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-              {FRAME_COLORS.map(c => {
-                const isActive = frameColor === c.value;
-                return (
-                  <div
-                    key={c.value}
-                    onClick={() => setFrameColor(c.value)}
-                    className={`color-swatch ${isActive ? 'active' : ''} ${c.value === 'checkerboard' ? 'checker-pattern' : c.value === 'y2k-silver' ? 'silver-pattern' : ''}`}
-                    style={{
-                      backgroundColor: c.value.startsWith('#') ? c.value : undefined
-                    }}
-                    title={c.name}
-                  />
-                );
-              })}
+              {FRAME_COLORS
+                .filter(c => layout === '2x2-grid' || !c.value.includes('yallu_sheep'))
+                .map(c => {
+                  const isActive = frameColor === c.value;
+                  const isImage = c.value.startsWith('/');
+                  return (
+                    <div
+                      key={c.value}
+                      onClick={() => setFrameColor(c.value)}
+                      className={`color-swatch ${isActive ? 'active' : ''} ${c.value === 'checkerboard' ? 'checker-pattern' : c.value === 'y2k-silver' ? 'silver-pattern' : ''}`}
+                      style={{
+                        backgroundColor: c.value.startsWith('#') ? c.value : undefined,
+                        backgroundImage: isImage ? `url(${c.value})` : undefined,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center'
+                      }}
+                      title={c.name}
+                    />
+                  );
+                })}
             </div>
             <div style={{ marginTop: '16px' }}>
               <label className="btn-secondary" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', padding: '12px', border: '1px dashed var(--accent-neon-cyan)', borderRadius: '12px', background: 'rgba(6, 182, 212, 0.05)', width: '100%' }}>

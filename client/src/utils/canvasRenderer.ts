@@ -80,13 +80,17 @@ export async function renderPhotoBoothCanvas(config: RenderConfig): Promise<HTML
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Could not get 2d context');
 
-  // Check if frameColor is an image (custom overlay template)
-  const isImageFrame = config.frameColor.startsWith('data:image/') || config.frameColor.startsWith('http://') || config.frameColor.startsWith('https://');
+  // Check if frameColor is an image (custom overlay template or local asset template)
+  const isImageFrame = config.frameColor.startsWith('data:image/') || 
+                       config.frameColor.startsWith('http://') || 
+                       config.frameColor.startsWith('https://') ||
+                       config.frameColor.includes('.png') ||
+                       config.frameColor.startsWith('/templates/');
 
   // 1. Draw frame background
   if (isImageFrame) {
     // Default background color under transparent PNG overlay template
-    ctx.fillStyle = '#000000'; // Draw solid black behind photos
+    ctx.fillStyle = '#ffffff'; // Draw solid white behind photos
     ctx.fillRect(0, 0, width, height);
   } else {
     drawBackground(ctx, width, height, config.frameColor);
@@ -170,14 +174,22 @@ export async function renderPhotoBoothCanvas(config: RenderConfig): Promise<HTML
     }
 
     // Grid of 4 cuts: 2 columns x 2 rows
-    const gridW = 1060;
-    const startX = (width - gridW) / 2;
-    const startY = 150;
+    let photoW = 510;
+    let photoH = 660;
+    let gapX = 40;
+    let gapY = 40;
+    let startX = (width - 1060) / 2;
+    let startY = 150;
 
-    const photoW = 510;
-    const photoH = 660;
-    const gapX = 40;
-    const gapY = 40;
+    // Custom coordinates for Yallu Sheep template to ensure perfect non-crop alignment
+    if (config.frameColor.includes('yallu_sheep')) {
+      photoW = 502;
+      photoH = 658;
+      gapX = 59;
+      gapY = 47;
+      startX = 69;
+      startY = 146;
+    }
 
     const filterStr = getCanvasFilterString(config.filter);
 
