@@ -181,8 +181,8 @@ export async function renderPhotoBoothCanvas(config: RenderConfig): Promise<HTML
     let startX = (width - 1060) / 2;
     let startY = 150;
 
-    // Custom coordinates for Yallu Sheep template to ensure perfect non-crop alignment
-    if (config.frameColor.includes('yallu_sheep')) {
+    // Custom coordinates for Yallu templates to ensure perfect non-crop alignment
+    if (config.frameColor.includes('yallu_')) {
       photoW = 502;
       photoH = 658;
       gapX = 59;

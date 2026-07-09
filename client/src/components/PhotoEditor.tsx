@@ -18,7 +18,8 @@ const FRAME_COLORS = [
   { name: '민트 글로우', value: '#a7f3d0' },
   { name: '체커보드', value: 'checkerboard' },
   { name: 'Y2K 실버', value: 'y2k-silver' },
-  { name: '아뉴스 - 양', value: '/templates/yallu_sheep.png' }
+  { name: '아뉴스 - 양', value: '/templates/yallu_sheep.png' },
+  { name: '아뉴스 - 바다', value: '/templates/yallu_sea.png' }
 ];
 
 const FILTERS: { name: string; id: PhotoFilter }[] = [
@@ -169,7 +170,7 @@ export const PhotoEditor: React.FC<PhotoEditorProps> = ({ photos, layout, onBack
             </label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px 12px' }}>
               {FRAME_COLORS
-                .filter(c => layout === '2x2-grid' || !c.value.includes('yallu_sheep'))
+                .filter(c => layout === '2x2-grid' || !c.value.includes('yallu_'))
                 .map(c => {
                   const isActive = frameColor === c.value;
                   const isImage = c.value.startsWith('/');
