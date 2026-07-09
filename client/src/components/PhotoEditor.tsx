@@ -18,7 +18,7 @@ const FRAME_COLORS = [
   { name: '민트 글로우', value: '#a7f3d0' },
   { name: '체커보드', value: 'checkerboard' },
   { name: 'Y2K 실버', value: 'y2k-silver' },
-  { name: '뽀토부스 • 얄루', value: '/templates/yallu_sheep.png' }
+  { name: '아뉴스 - 양', value: '/templates/yallu_sheep.png' }
 ];
 
 const FILTERS: { name: string; id: PhotoFilter }[] = [
@@ -167,25 +167,30 @@ export const PhotoEditor: React.FC<PhotoEditorProps> = ({ photos, layout, onBack
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', fontWeight: 700, marginBottom: '12px', color: 'var(--text-muted)' }}>
               <Palette size={18} color="var(--accent-neon-pink)" /> 프레임 테마 선택
             </label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px 12px' }}>
               {FRAME_COLORS
                 .filter(c => layout === '2x2-grid' || !c.value.includes('yallu_sheep'))
                 .map(c => {
                   const isActive = frameColor === c.value;
                   const isImage = c.value.startsWith('/');
                   return (
-                    <div
-                      key={c.value}
-                      onClick={() => setFrameColor(c.value)}
-                      className={`color-swatch ${isActive ? 'active' : ''} ${c.value === 'checkerboard' ? 'checker-pattern' : c.value === 'y2k-silver' ? 'silver-pattern' : ''}`}
-                      style={{
-                        backgroundColor: c.value.startsWith('#') ? c.value : undefined,
-                        backgroundImage: isImage ? `url(${c.value})` : undefined,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center'
-                      }}
-                      title={c.name}
-                    />
+                    <div key={c.value} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                      <div
+                        onClick={() => setFrameColor(c.value)}
+                        className={`color-swatch ${isActive ? 'active' : ''} ${c.value === 'checkerboard' ? 'checker-pattern' : c.value === 'y2k-silver' ? 'silver-pattern' : ''}`}
+                        style={{
+                          backgroundColor: c.value.startsWith('#') ? c.value : undefined,
+                          backgroundImage: isImage ? `url(${c.value})` : undefined,
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
+                          margin: 0
+                        }}
+                        title={c.name}
+                      />
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
+                        {c.name}
+                      </span>
+                    </div>
                   );
                 })}
             </div>
