@@ -189,7 +189,7 @@ export async function renderPhotoBoothCanvas(config: RenderConfig): Promise<HTML
       gapY = 47;
       startX = 69;
       startY = 146;
-    } else if (config.frameColor.includes('mt_youth.png')) {
+    } else if (config.frameColor.includes('mt_youth.png') || config.frameColor.includes('mt_priest')) {
       photoW = 510;
       photoH = 665;
       gapX = 45;
