@@ -68,9 +68,17 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
     const video = videoRef.current;
     const canvas = hiddenCanvasRef.current;
 
-    // Use 4:3 aspect ratio crop or native video size
-    canvas.width = 800;
-    canvas.height = 600;
+    // Determine target aspect ratio based on layout (matches cameraAspectRatio)
+    const targetRatio = layout === '2x6-strip-pair' ? (480 / 340) : (510 / 660);
+
+    if (targetRatio > 1) {
+      canvas.width = 800;
+      canvas.height = Math.round(800 / targetRatio);
+    } else {
+      canvas.height = 800;
+      canvas.width = Math.round(800 * targetRatio);
+    }
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return '';
 
@@ -79,7 +87,7 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
       ctx.scale(-1, 1);
     }
 
-    // Object-fit cover draw video onto 800x600 canvas
+    // Object-fit cover draw video onto dynamically sized canvas
     const vRatio = video.videoWidth / video.videoHeight;
     const cRatio = canvas.width / canvas.height;
     let sx = 0, sy = 0, sw = video.videoWidth, sh = video.videoHeight;
@@ -172,11 +180,14 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
       <div className="camera-booth-layout">
         
         {/* Left Column: Camera Viewport */}
-        <div className="glass-card camera-viewport-card" style={{ padding: '20px', position: 'relative', overflow: 'hidden', width: '100%' }}>
+        <div className="glass-card camera-viewport-card" style={{ padding: '20px', position: 'relative', overflow: 'hidden', width: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <div style={{
             position: 'relative',
             width: '100%',
-            aspectRatio: cameraAspectRatio,
+            maxWidth: capturedPhotos.length === 8 ? '100%' : (layout === '2x6-strip-pair' ? '100%' : 'calc(60vh * (510 / 660))'),
+            aspectRatio: capturedPhotos.length === 8 ? undefined : cameraAspectRatio,
+            maxHeight: capturedPhotos.length === 8 ? undefined : '60vh',
+            margin: '0 auto',
             background: '#000',
             borderRadius: '16px',
             overflow: 'hidden',
@@ -184,19 +195,17 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
           }}>
             {capturedPhotos.length === 8 ? (
               <div style={{
-                position: 'absolute',
-                inset: 0,
-                padding: '16px',
+                width: '100%',
+                padding: '20px',
                 background: 'var(--bg-secondary)',
-                overflowY: 'auto',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'center'
+                alignItems: 'center'
               }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '14px', textAlign: 'center', color: 'var(--text-main)' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '16px', textAlign: 'center', color: 'var(--text-main)' }}>
                   📸 아래 사진 중 4장을 마음에 드는 순서대로 터치해 주세요!
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', width: '100%' }}>
                   {capturedPhotos.map((photo, index) => {
                     const selIndex = selectedPhotoIndices.indexOf(index);
                     const isSelected = selIndex !== -1;
@@ -216,7 +225,7 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
                           borderRadius: '12px',
                           overflow: 'hidden',
                           cursor: 'pointer',
-                          border: isSelected ? '3px solid var(--accent-neon-pink)' : '2px solid var(--border-glass)',
+                          border: isSelected ? '4px solid var(--accent-neon-pink)' : '2px solid var(--border-glass)',
                           boxShadow: isSelected ? '0 0 15px rgba(255, 77, 128, 0.45)' : 'none',
                           transition: 'all 0.2s ease',
                           transform: isSelected ? 'scale(0.96)' : 'none'
