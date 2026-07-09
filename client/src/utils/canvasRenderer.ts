@@ -189,6 +189,14 @@ export async function renderPhotoBoothCanvas(config: RenderConfig): Promise<HTML
       gapY = 47;
       startX = 69;
       startY = 146;
+    } else if (config.frameColor.includes('mt_')) {
+      // Clean poster fits standard 2x2 postcard slot grid perfectly
+      photoW = 510;
+      photoH = 660;
+      gapX = 40;
+      gapY = 40;
+      startX = 70;
+      startY = 150;
     }
 
     const filterStr = getCanvasFilterString(config.filter);

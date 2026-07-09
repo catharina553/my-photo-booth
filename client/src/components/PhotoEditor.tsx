@@ -19,7 +19,8 @@ const FRAME_COLORS = [
   { name: '체커보드', value: 'checkerboard' },
   { name: 'Y2K 실버', value: 'y2k-silver' },
   { name: '아뉴스 - 양', value: '/templates/yallu_sheep.png' },
-  { name: '아뉴스 - 바다', value: '/templates/yallu_sea.png' }
+  { name: '아뉴스 - 바다', value: '/templates/yallu_sea.png' },
+  { name: '아뉴스 - 엠티', value: '/templates/mt_placeholder' } // dynamically resolved below
 ];
 
 const FILTERS: { name: string; id: PhotoFilter }[] = [
@@ -170,18 +171,30 @@ export const PhotoEditor: React.FC<PhotoEditorProps> = ({ photos, layout, onBack
             </label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px 12px' }}>
               {FRAME_COLORS
-                .filter(c => layout === '2x2-grid' || !c.value.includes('yallu_'))
+                .filter(c => {
+                  // Hide Yallu templates on 2x6 strip layouts
+                  if (layout === '2x6-strip-pair' && c.value.includes('yallu_')) {
+                    return false;
+                  }
+                  return true;
+                })
                 .map(c => {
-                  const isActive = frameColor === c.value;
-                  const isImage = c.value.startsWith('/');
+                  // Resolve dynamic 엠티 (MT) path based on the selected layout
+                  let resolvedValue = c.value;
+                  if (c.value === '/templates/mt_placeholder') {
+                    resolvedValue = layout === '2x6-strip-pair' ? '/templates/mt_strip.png' : '/templates/mt_grid.png';
+                  }
+
+                  const isActive = frameColor === resolvedValue;
+                  const isImage = resolvedValue.startsWith('/');
                   return (
                     <div key={c.value} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
                       <div
-                        onClick={() => setFrameColor(c.value)}
-                        className={`color-swatch ${isActive ? 'active' : ''} ${c.value === 'checkerboard' ? 'checker-pattern' : c.value === 'y2k-silver' ? 'silver-pattern' : ''}`}
+                        onClick={() => setFrameColor(resolvedValue)}
+                        className={`color-swatch ${isActive ? 'active' : ''} ${resolvedValue === 'checkerboard' ? 'checker-pattern' : resolvedValue === 'y2k-silver' ? 'silver-pattern' : ''}`}
                         style={{
-                          backgroundColor: c.value.startsWith('#') ? c.value : undefined,
-                          backgroundImage: isImage ? `url(${c.value})` : undefined,
+                          backgroundColor: resolvedValue.startsWith('#') ? resolvedValue : undefined,
+                          backgroundImage: isImage ? `url(${resolvedValue})` : undefined,
                           backgroundSize: 'cover',
                           backgroundPosition: 'center',
                           margin: 0
