@@ -189,6 +189,13 @@ export async function renderPhotoBoothCanvas(config: RenderConfig): Promise<HTML
       gapY = 47;
       startX = 69;
       startY = 146;
+    } else if (config.frameColor.includes('mt_youth.png')) {
+      photoW = 510;
+      photoH = 665;
+      gapX = 45;
+      gapY = 44;
+      startX = 65;
+      startY = 142;
     } else if (config.frameColor.includes('mt_')) {
       // Clean poster fits standard 2x2 postcard slot grid perfectly
       photoW = 510;

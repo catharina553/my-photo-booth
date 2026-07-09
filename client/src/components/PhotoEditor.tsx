@@ -20,7 +20,8 @@ const FRAME_COLORS = [
   { name: 'Y2K 실버', value: 'y2k-silver' },
   { name: '아뉴스 - 양', value: '/templates/yallu_sheep.png' },
   { name: '아뉴스 - 바다', value: '/templates/yallu_sea.png' },
-  { name: '아뉴스 - 엠티', value: '/templates/mt_placeholder' } // dynamically resolved below
+  { name: '아뉴스 - 엠티', value: '/templates/mt_placeholder' }, // dynamically resolved below
+  { name: '아뉴스 - 청년회', value: '/templates/mt_youth.png' }
 ];
 
 const FILTERS: { name: string; id: PhotoFilter }[] = [
@@ -172,8 +173,8 @@ export const PhotoEditor: React.FC<PhotoEditorProps> = ({ photos, layout, onBack
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px 12px' }}>
               {FRAME_COLORS
                 .filter(c => {
-                  // Hide Yallu templates on 2x6 strip layouts
-                  if (layout === '2x6-strip-pair' && c.value.includes('yallu_')) {
+                  // Hide Yallu templates and youth template on 2x6 strip layouts
+                  if (layout === '2x6-strip-pair' && (c.value.includes('yallu_') || c.value.includes('mt_youth.png'))) {
                     return false;
                   }
                   return true;
