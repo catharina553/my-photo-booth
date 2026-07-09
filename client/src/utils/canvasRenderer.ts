@@ -232,29 +232,7 @@ export async function renderPhotoBoothCanvas(config: RenderConfig): Promise<HTML
     }
   }
 
-  // 4. Draw date stamp at bottom-right corner (very small)
-  ctx.save();
-  ctx.fillStyle = textColor;
-  ctx.globalAlpha = 0.6;
-  
-  if (config.layout === '2x6-strip-pair') {
-    ctx.font = '500 16px "Inter", "Outfit", sans-serif';
-    ctx.textAlign = 'right';
-    const stripWidth = 540;
-    const paddingX = 40;
-    const gapX = 40;
-    const leftX1 = paddingX;
-    const leftX2 = paddingX + stripWidth + gapX;
-    
-    // Position stamp at bottom right of each strip
-    ctx.fillText(config.dateStr || new Date().toLocaleDateString('ko-KR'), leftX1 + stripWidth - 30, height - 30);
-    ctx.fillText(config.dateStr || new Date().toLocaleDateString('ko-KR'), leftX2 + stripWidth - 30, height - 30);
-  } else {
-    ctx.font = '600 18px "Inter", "Outfit", sans-serif';
-    ctx.textAlign = 'right';
-    ctx.fillText(`촬영일시: ${config.dateStr || new Date().toLocaleDateString('ko-KR')}`, width - 40, height - 40);
-  }
-  ctx.restore();
+
 
   return canvas;
 }
