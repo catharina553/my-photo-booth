@@ -56,7 +56,7 @@ router.get('/network', (req: Request, res: Response) => {
 // Upload a new 4-cut photo
 router.post('/photos', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { title = 'BbotoBooth Session', frameColor = '#ffffff', layout = '2x6-strip-pair', imageDataUrl, videoDataUrl, movingPhotoDataUrl, selectedIndices, shotOffsets } = req.body;
+    const { title = 'BbotoBooth Session', frameColor = '#ffffff', layout = '2x6-strip-pair', imageDataUrl, movingPhotoDataUrl, selectedIndices, shotOffsets } = req.body;
     
     if (!imageDataUrl) {
       res.status(400).json({ error: 'imageDataUrl is required' });
@@ -67,10 +67,7 @@ router.post('/photos', async (req: Request, res: Response): Promise<void> => {
     const filename = `photo-${id}.png`;
     const createdAt = new Date().toISOString();
     
-    const tempVideoName = videoDataUrl ? `temp-video-${id}.webm` : undefined;
     const tempMovingName = movingPhotoDataUrl ? `temp-moving-${id}.webm` : undefined;
-
-    const videoFilename = videoDataUrl ? `video-${id}.mp4` : undefined;
     const movingPhotoFilename = movingPhotoDataUrl ? `moving-photo-${id}.mp4` : undefined;
 
     const record = savePhotoRecord({
@@ -80,31 +77,14 @@ router.post('/photos', async (req: Request, res: Response): Promise<void> => {
       layout,
       createdAt,
       filename,
-      videoFilename: tempVideoName,
       movingPhotoFilename: tempMovingName,
       selectedIndices,
       shotOffsets
-    }, imageDataUrl, videoDataUrl, movingPhotoDataUrl);
+    }, imageDataUrl, undefined, movingPhotoDataUrl);
 
     // Convert WebM to MP4 for maximum iOS/Android native player support
     const { convertWebmToMp4 } = require('./converter');
     const fs = require('fs');
-
-    if (tempVideoName && videoFilename) {
-      const inputPath = path.join(UPLOADS_DIR, tempVideoName);
-      const outputPath = path.join(UPLOADS_DIR, videoFilename);
-      try {
-        await convertWebmToMp4(inputPath, outputPath);
-        if (fs.existsSync(inputPath)) {
-          fs.unlinkSync(inputPath);
-        }
-        record.videoFilename = videoFilename;
-      } catch (err) {
-        console.error("FFmpeg conversion failed for raw video, fallback to webm", err);
-        // Fallback: keep temp webm name
-        record.videoFilename = tempVideoName;
-      }
-    }
 
     if (tempMovingName && movingPhotoFilename) {
       const inputPath = path.join(UPLOADS_DIR, tempMovingName);
@@ -127,7 +107,6 @@ router.post('/photos', async (req: Request, res: Response): Promise<void> => {
       const dbData = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
       const rec = dbData.find((r: any) => r.id === id);
       if (rec) {
-        rec.videoFilename = record.videoFilename;
         rec.movingPhotoFilename = record.movingPhotoFilename;
         fs.writeFileSync(dbPath, JSON.stringify(dbData, null, 2), 'utf8');
       }
@@ -147,36 +126,6 @@ router.post('/photos', async (req: Request, res: Response): Promise<void> => {
       console.error("====== 구글 드라이브 사진 업로드 에러 ======");
       console.error(driveErr.message || driveErr);
       console.error("=========================================");
-    }
-
-    // Upload video to Google Drive (if present)
-    let videoDriveLink: string | null = null;
-    if (videoDataUrl && videoFilename) {
-      const localVideoPath = path.join(UPLOADS_DIR, videoFilename);
-      try {
-        videoDriveLink = await uploadToGoogleDrive(localVideoPath, videoFilename);
-        if (videoDriveLink) {
-          // Mutate the local memory record to include drive links
-          record.videoDriveLink = videoDriveLink;
-          
-          // Re-save database to persist the videoDriveLink
-          const fs = require('fs');
-          const dbPath = path.join(UPLOADS_DIR, 'db.json');
-          if (fs.existsSync(dbPath)) {
-            const dbData = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
-            const rec = dbData.find((r: any) => r.id === id);
-            if (rec) {
-              rec.videoDriveLink = videoDriveLink;
-              fs.writeFileSync(dbPath, JSON.stringify(dbData, null, 2), 'utf8');
-            }
-          }
-          console.log(`🔗 [Google Drive] Video successfully auto-saved to cloud: ${videoDriveLink}`);
-        }
-      } catch (driveErr: any) {
-        console.error("====== 구글 드라이브 비디오 업로드 에러 ======");
-        console.error(driveErr.message || driveErr);
-        console.error("=========================================");
-      }
     }
 
     // Upload moving photo video to Google Drive (if present)
@@ -211,7 +160,6 @@ router.post('/photos', async (req: Request, res: Response): Promise<void> => {
       id: record.id,
       record,
       driveLink,
-      videoDriveLink,
       movingPhotoDriveLink
     });
   } catch (error: any) {
