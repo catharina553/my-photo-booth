@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { CameraBooth } from './components/CameraBooth';
+import { PhotoUploader } from './components/PhotoUploader';
 import { PhotoEditor } from './components/PhotoEditor';
 import { ShareModal } from './components/ShareModal';
 import { SharePage } from './components/SharePage';
-import { Columns, Layout, Sparkles } from 'lucide-react';
+import { Columns, Layout, Sparkles, Camera, Upload, ArrowLeft } from 'lucide-react';
 import type { FrameLayout } from './utils/canvasRenderer';
 
-export type BoothStep = 'layout' | 'capture' | 'customize' | 'share';
+export type BoothStep = 'mode' | 'layout' | 'capture' | 'upload' | 'customize' | 'share';
 
 export const App: React.FC = () => {
-  const [step, setStep] = useState<BoothStep>('layout');
+  const [step, setStep] = useState<BoothStep>('mode');
+  const [mode, setMode] = useState<'capture' | 'upload'>('capture');
   const [layout, setLayout] = useState<FrameLayout>('2x6-strip-pair');
   const [capturedPhotos, setCapturedPhotos] = useState<string[]>([]);
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
@@ -49,7 +51,7 @@ export const App: React.FC = () => {
     setShotOffsets([]);
     setFrameColor('#ffffff');
     setFinishedCanvas(null);
-    setStep('layout');
+    setStep('mode');
   };
 
   // If mobile user scanned QR code, show clean SharePage
@@ -63,7 +65,18 @@ export const App: React.FC = () => {
 
       <main style={{ marginTop: '16px' }}>
         {step === 'layout' && (
-          <div style={{ maxWidth: '800px', margin: '60px auto 40px', padding: '0 24px' }} className="animate-fade-in">
+          <div style={{ maxWidth: '800px', margin: '40px auto 40px', padding: '0 24px' }} className="animate-fade-in">
+            {/* Back to mode selection */}
+            <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '24px' }}>
+              <button 
+                onClick={() => setStep('mode')} 
+                className="btn-secondary" 
+                style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', borderRadius: '12px' }}
+              >
+                <ArrowLeft size={16} /> 이전 단계로 (모드 선택)
+              </button>
+            </div>
+
             <div style={{ textAlign: 'center', marginBottom: '40px' }}>
               <div style={{
                 display: 'inline-flex',
@@ -82,7 +95,7 @@ export const App: React.FC = () => {
                 프레임 규격 선택
               </h2>
               <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>
-                원하는 사진 배치를 선택해 주세요. 촬영 비율이 규격에 맞게 자동 최적화됩니다.
+                원하는 사진 배치를 선택해 주세요. 비율이 규격에 맞게 자동 최적화됩니다.
               </p>
             </div>
 
@@ -91,7 +104,7 @@ export const App: React.FC = () => {
               <div 
                 onClick={() => {
                   setLayout('2x6-strip-pair');
-                  setStep('capture');
+                  setStep(mode === 'capture' ? 'capture' : 'upload');
                 }}
                 className="glass-card" 
                 style={{ 
@@ -147,7 +160,7 @@ export const App: React.FC = () => {
               <div 
                 onClick={() => {
                   setLayout('2x2-grid');
-                  setStep('capture');
+                  setStep(mode === 'capture' ? 'capture' : 'upload');
                 }}
                 className="glass-card" 
                 style={{ 
@@ -201,6 +214,131 @@ export const App: React.FC = () => {
             </div>
           </div>
         )}
+        {step === 'mode' && (
+          <div style={{ maxWidth: '800px', margin: '40px auto 0', padding: '0 20px 40px' }} className="animate-fade-in">
+            <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '10px 20px',
+                borderRadius: '99px',
+                background: 'var(--bg-glass)',
+                border: '1px solid var(--border-glass)',
+                marginBottom: '16px'
+              }}>
+                <Sparkles size={18} className="neon-text" />
+                <span style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-muted)' }}>아뉴스 포토부스</span>
+              </div>
+              <h1 style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '12px' }}>
+                오늘의 소중한 순간을 담아보세요 📸
+              </h1>
+              <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', maxWidth: '500px', margin: '0 auto', lineHeight: 1.5 }}>
+                부스 카메라를 이용해 즉석에서 촬영하거나, 스마트폰/컴퓨터 안의 사진을 업로드해 인생네컷 프레임과 합성하세요.
+              </p>
+            </div>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+              gap: '28px',
+              marginBottom: '40px'
+            }}>
+              {/* Option 1: Instant Capture */}
+              <div
+                onClick={() => {
+                  setMode('capture');
+                  setStep('layout');
+                }}
+                className="glass-card hover-scale"
+                style={{
+                  padding: '40px 32px',
+                  borderRadius: '24px',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid var(--border-glass)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                }}
+              >
+                <div style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '20px',
+                  background: 'linear-gradient(135deg, #ff4d80 0%, #ff80b3 100%)',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '24px',
+                  boxShadow: '0 10px 20px rgba(255,77,128,0.3)'
+                }}>
+                  <Camera size={32} />
+                </div>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '8px' }}>📸 즉석 카메라 촬영</h3>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.4, margin: 0 }}>
+                  부스 전면 카메라를 기동하여 6장 중 4장을 촬영하고 실시간 움직이는 타임랩스 영상을 만듭니다.
+                </p>
+              </div>
+
+              {/* Option 2: Upload Files */}
+              <div
+                onClick={() => {
+                  setMode('upload');
+                  setStep('layout');
+                }}
+                className="glass-card hover-scale"
+                style={{
+                  padding: '40px 32px',
+                  borderRadius: '24px',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid var(--border-glass)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                }}
+              >
+                <div style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '20px',
+                  background: 'linear-gradient(135deg, #a855f7 0%, #d8b4fe 100%)',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '24px',
+                  boxShadow: '0 10px 20px rgba(168,85,247,0.3)'
+                }}>
+                  <Upload size={32} />
+                </div>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '8px' }}>📁 내 사진 파일 업로드</h3>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.4, margin: 0 }}>
+                  이미 찍어둔 소중한 사진 4장을 내 컴퓨터나 스마트폰에서 불러와 인생네컷 템플릿과 정교하게 합성합니다.
+                </p>
+              </div>
+            </div>
+
+            {/* Bottom guide notice */}
+            <div className="glass-card" style={{
+              padding: '16px 24px',
+              borderRadius: '16px',
+              textAlign: 'center',
+              background: 'rgba(255, 255, 255, 0.4)',
+              fontSize: '0.85rem',
+              color: 'var(--text-muted)',
+              border: '1px solid rgba(0,0,0,0.03)'
+            }}>
+              🚨 <b>촬영 및 합성 시 문제가 발생하면:</b> 즉시 화면 하단 문의처 혹은 관리인에게 안내를 요청해 주시기 바랍니다.
+            </div>
+          </div>
+        )}
 
         {step === 'capture' && (
           <CameraBooth
@@ -215,11 +353,24 @@ export const App: React.FC = () => {
           />
         )}
 
+        {step === 'upload' && (
+          <PhotoUploader
+            onBack={() => setStep('layout')}
+            onFinish={(photos) => {
+              setCapturedPhotos(photos);
+              setVideoBlob(null);
+              setShotOffsets([]);
+              setSaveVideoOption(false);
+              setStep('customize');
+            }}
+          />
+        )}
+
         {step === 'customize' && (
           <PhotoEditor
             photos={capturedPhotos}
             layout={layout}
-            onBack={() => setStep('capture')}
+            onBack={() => setStep(mode === 'capture' ? 'capture' : 'upload')}
             onFinish={(canvas, saveVideo, color) => {
               setFinishedCanvas(canvas);
               setSaveVideoOption(saveVideo);
