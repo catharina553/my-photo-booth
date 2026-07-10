@@ -7,7 +7,7 @@ interface PhotoEditorProps {
   photos: string[];
   layout: FrameLayout;
   onBack: () => void;
-  onFinish: (canvas: HTMLCanvasElement, saveVideo: boolean) => void;
+  onFinish: (canvas: HTMLCanvasElement, saveVideo: boolean, frameColor: string) => void;
 }
 
 const FRAME_COLORS = [
@@ -97,7 +97,7 @@ export const PhotoEditor: React.FC<PhotoEditorProps> = ({ photos, layout, onBack
 
   const handleProceed = () => {
     if (!currentCanvasRef.current) return;
-    onFinish(currentCanvasRef.current, saveVideo);
+    onFinish(currentCanvasRef.current, saveVideo, frameColor);
   };
 
   return (

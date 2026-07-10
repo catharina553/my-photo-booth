@@ -16,6 +16,7 @@ export const App: React.FC = () => {
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
   const [saveVideoOption, setSaveVideoOption] = useState<boolean>(true);
   const [shotOffsets, setShotOffsets] = useState<any[]>([]);
+  const [frameColor, setFrameColor] = useState<string>('#ffffff');
   const [finishedCanvas, setFinishedCanvas] = useState<HTMLCanvasElement | null>(null);
   const [shareParamId, setShareParamId] = useState<string | null>(null);
   
@@ -46,6 +47,7 @@ export const App: React.FC = () => {
     setVideoBlob(null);
     setSaveVideoOption(true);
     setShotOffsets([]);
+    setFrameColor('#ffffff');
     setFinishedCanvas(null);
     setStep('layout');
   };
@@ -218,9 +220,10 @@ export const App: React.FC = () => {
             photos={capturedPhotos}
             layout={layout}
             onBack={() => setStep('capture')}
-            onFinish={(canvas, saveVideo) => {
+            onFinish={(canvas, saveVideo, color) => {
               setFinishedCanvas(canvas);
               setSaveVideoOption(saveVideo);
+              setFrameColor(color);
               setStep('share');
             }}
           />
@@ -231,6 +234,8 @@ export const App: React.FC = () => {
             canvas={finishedCanvas}
             videoBlob={saveVideoOption ? videoBlob : null}
             shotOffsets={saveVideoOption ? shotOffsets : undefined}
+            layout={layout}
+            frameColor={frameColor}
             onReset={handleReset}
           />
         )}

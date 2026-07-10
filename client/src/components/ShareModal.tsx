@@ -9,10 +9,12 @@ interface ShareModalProps {
   canvas: HTMLCanvasElement;
   videoBlob: Blob | null;
   shotOffsets?: ShotOffset[];
+  layout: string;
+  frameColor: string;
   onReset: () => void;
 }
 
-export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, shotOffsets, onReset }) => {
+export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, shotOffsets, layout, frameColor, onReset }) => {
   const [photoId, setPhotoId] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string>('');
   const [isUploading, setIsUploading] = useState<boolean>(true);
@@ -181,7 +183,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, shotO
           title: 'BbotoBooth Session',
           imageDataUrl: dataUrl,
           videoDataUrl: videoDataUrl,
-          shotOffsets: shotOffsets
+          shotOffsets: shotOffsets,
+          layout: layout,
+          frameColor: frameColor
         })
       });
 
