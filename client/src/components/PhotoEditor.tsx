@@ -19,9 +19,8 @@ const FRAME_COLORS = [
   { name: '아뉴스 - 양', value: '/templates/yallu_sheep.png' },
   { name: '아뉴스 - 바다', value: '/templates/yallu_sea.png' },
   { name: '아뉴스 - 말씀 양', value: '/templates/mt_sheep_word.png' },
-  { name: '아뉴스 MT1', value: '/templates/mt_priest2.png' }, // 신부님 + 학사님
-  { name: '아뉴스 MT2', value: '/templates/mt_priest1.png' }, // 신부님
-  { name: '아뉴스 MT (청년회)', value: '/templates/mt_youth.png' }
+  { name: '아뉴스 - 말씀 신부님', value: '/templates/mt_priest_word.png' },
+  { name: '아뉴스 - 말씀 청년회', value: '/templates/mt_youth_word.png' }
 ];
 
 const FILTERS: { name: string; id: PhotoFilter }[] = [

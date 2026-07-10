@@ -182,7 +182,7 @@ export async function renderPhotoBoothCanvas(config: RenderConfig): Promise<HTML
     let startY = 150;
 
     // Custom coordinates for Yallu templates to ensure perfect non-crop alignment
-    if (config.frameColor.includes('yallu_') || config.frameColor.includes('mt_sheep_word')) {
+    if (config.frameColor.includes('yallu_') || config.frameColor.includes('_word')) {
       photoW = 502;
       photoH = 658;
       gapX = 59;
