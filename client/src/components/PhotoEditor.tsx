@@ -16,11 +16,8 @@ const FRAME_COLORS = [
   { name: '베이비 핑크', value: '#fbcfe8' },
   { name: '스카이 블루', value: '#bae6fd' },
   { name: '민트 글로우', value: '#a7f3d0' },
-  { name: '체커보드', value: 'checkerboard' },
-  { name: 'Y2K 실버', value: 'y2k-silver' },
   { name: '아뉴스 - 양', value: '/templates/yallu_sheep.png' },
   { name: '아뉴스 - 바다', value: '/templates/yallu_sea.png' },
-  { name: '아뉴스 MT', value: '/templates/mt_placeholder' }, // dynamically resolved below
   { name: '아뉴스 MT1', value: '/templates/mt_priest2.png' }, // 신부님 + 학사님
   { name: '아뉴스 MT2', value: '/templates/mt_priest1.png' }, // 신부님
   { name: '아뉴스 MT (청년회)', value: '/templates/mt_youth.png' }
@@ -175,19 +172,14 @@ export const PhotoEditor: React.FC<PhotoEditorProps> = ({ photos, layout, onBack
                   return true;
                 })
                 .map(c => {
-                  // Resolve dynamic 엠티 (MT) path based on the selected layout
-                  let resolvedValue = c.value;
-                  if (c.value === '/templates/mt_placeholder') {
-                    resolvedValue = layout === '2x6-strip-pair' ? '/templates/mt_strip.png' : '/templates/mt_grid.png';
-                  }
-
+                  const resolvedValue = c.value;
                   const isActive = frameColor === resolvedValue;
                   const isImage = resolvedValue.startsWith('/');
                   return (
                     <div key={c.value} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
                       <div
                         onClick={() => setFrameColor(resolvedValue)}
-                        className={`color-swatch ${isActive ? 'active' : ''} ${resolvedValue === 'checkerboard' ? 'checker-pattern' : resolvedValue === 'y2k-silver' ? 'silver-pattern' : ''}`}
+                        className={`color-swatch ${isActive ? 'active' : ''}`}
                         style={{
                           backgroundColor: resolvedValue.startsWith('#') ? resolvedValue : undefined,
                           backgroundImage: isImage ? `url(${resolvedValue})` : undefined,

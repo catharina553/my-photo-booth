@@ -189,21 +189,14 @@ export async function renderPhotoBoothCanvas(config: RenderConfig): Promise<HTML
       gapY = 47;
       startX = 69;
       startY = 146;
-    } else if (config.frameColor.includes('mt_youth.png') || config.frameColor.includes('mt_priest')) {
-      photoW = 510;
-      photoH = 665;
-      gapX = 45;
-      gapY = 44;
-      startX = 65;
-      startY = 142;
     } else if (config.frameColor.includes('mt_')) {
-      // Clean poster fits standard 2x2 postcard slot grid perfectly
-      photoW = 510;
-      photoH = 660;
-      gapX = 40;
-      gapY = 40;
-      startX = 70;
-      startY = 150;
+      // New MT templates with title at top — slots begin after the header
+      photoW = 504;
+      photoH = 621;
+      gapX = 60;
+      gapY = 54;
+      startX = 66;
+      startY = 198;
     }
 
     const filterStr = getCanvasFilterString(config.filter);
