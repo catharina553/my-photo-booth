@@ -251,72 +251,87 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
           maxWidth: '500px',
           width: '100%'
         }}>
-          <div style={{
-            background: 'rgba(255, 77, 128, 0.12)',
-            color: 'var(--accent-neon-pink)',
-            fontWeight: 800,
-            fontSize: '0.88rem',
-            padding: '10px 16px',
-            borderRadius: '12px',
-            marginBottom: '16px',
-            width: '100%',
-            textAlign: 'center',
-            border: '1px solid rgba(255, 77, 128, 0.25)'
-          }}>
-            💡 이미지를 꾹 누르면 사진첩에 바로 저장돼요!
+          {/* [Section 1] Static Photo Card */}
+          <div style={{ width: '100%', marginBottom: '32px' }}>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              📸 최종 인화용 사진 (Static)
+            </h3>
+            <div style={{
+              width: '100%',
+              overflow: 'hidden',
+              borderRadius: '14px',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.08)',
+              background: 'var(--bg-tertiary)',
+              marginBottom: '12px'
+            }}>
+              <img
+                src={imageUrl}
+                alt="Static 4-Cut Photo"
+                style={{ width: '100%', height: 'auto', display: 'block' }}
+              />
+            </div>
+            <button
+              onClick={handleDownloadMobile}
+              className="btn-primary"
+              style={{ width: '100%', padding: '16px', fontSize: '1.1rem', borderRadius: '14px' }}
+            >
+              <Download size={22} /> 스마트폰 사진첩에 저장 (고화질)
+            </button>
           </div>
 
-          <div style={{
-            position: 'relative',
-            width: '100%',
-            overflow: 'hidden',
-            borderRadius: '14px',
-            marginBottom: '20px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
-            background: 'var(--bg-tertiary)'
-          }}>
-            <img
-              src={imageUrl}
-              alt="Shared 4-Cut Photo"
-              style={{ width: '100%', height: 'auto', display: 'block' }}
-            />
-            {videoUrl && photoData.shotOffsets && photoData.shotOffsets.length === 4 && (
-              getSlotsCoordinates(photoData.layout, photoData.frameColor).map((slot, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    position: 'absolute',
-                    left: `${slot.left}%`,
-                    top: `${slot.top}%`,
-                    width: `${slot.width}%`,
-                    height: `${slot.height}%`,
-                    overflow: 'hidden',
-                    background: '#000'
-                  }}
-                >
-                  <VideoLoopPlayer
-                    src={videoUrl}
-                    start={photoData.shotOffsets[slot.videoIdx].start}
-                    end={photoData.shotOffsets[slot.videoIdx].end}
-                  />
-                </div>
-              ))
-            )}
-          </div>
-
-          <button
-            onClick={handleDownloadMobile}
-            className="btn-primary"
-            style={{ width: '100%', padding: '16px', fontSize: '1.1rem', borderRadius: '14px', marginBottom: '24px' }}
-          >
-            <Download size={22} /> 스마트폰 사진첩에 저장 (고화질)
-          </button>
-
-          {videoUrl && (
-            <div style={{ width: '100%', borderTop: '1px solid var(--border-glass)', paddingTop: '20px', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', fontWeight: 800, marginBottom: '12px', color: 'var(--text-main)' }}>
-                🎥 촬영 과정 타임랩스
+          {/* [Section 2] Live Moving Photo Card */}
+          {videoUrl && photoData.shotOffsets && photoData.shotOffsets.length === 4 && (
+            <div style={{ width: '100%', borderTop: '1px solid var(--border-glass)', paddingTop: '32px', marginBottom: '32px' }}>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                ✨ 움직이는 포토카드 (Live)
+              </h3>
+              <div style={{
+                position: 'relative',
+                width: '100%',
+                overflow: 'hidden',
+                borderRadius: '14px',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.08)',
+                background: 'var(--bg-tertiary)',
+                marginBottom: '12px'
+              }}>
+                <img
+                  src={imageUrl}
+                  alt="Live Photo Background"
+                  style={{ width: '100%', height: 'auto', display: 'block' }}
+                />
+                {getSlotsCoordinates(photoData.layout, photoData.frameColor).map((slot, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      position: 'absolute',
+                      left: `${slot.left}%`,
+                      top: `${slot.top}%`,
+                      width: `${slot.width}%`,
+                      height: `${slot.height}%`,
+                      overflow: 'hidden',
+                      background: '#000'
+                    }}
+                  >
+                    <VideoLoopPlayer
+                      src={videoUrl}
+                      start={photoData.shotOffsets[slot.videoIdx].start}
+                      end={photoData.shotOffsets[slot.videoIdx].end}
+                    />
+                  </div>
+                ))}
               </div>
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.4 }}>
+                💡 스마트폰 화면을 녹화하거나 캡처하여 움짤로도 활용해 보세요!
+              </p>
+            </div>
+          )}
+
+          {/* [Section 3] Full Timelapse Video */}
+          {videoUrl && (
+            <div style={{ width: '100%', borderTop: '1px solid var(--border-glass)', paddingTop: '32px', marginBottom: '24px' }}>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                🎥 촬영 전체 타임랩스 (아웃트로 포함)
+              </h3>
               <video
                 src={videoUrl}
                 controls
@@ -324,7 +339,7 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
                 style={{
                   width: '100%',
                   borderRadius: '14px',
-                  boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.08)',
                   background: '#000',
                   marginBottom: '12px'
                 }}
@@ -339,7 +354,7 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
             </div>
           )}
 
-          <div style={{ fontSize: '0.75rem', color: 'var(--accent-neon-pink)', fontWeight: 800, marginTop: '12px', textAlign: 'center', lineHeight: 1.4 }}>
+          <div style={{ fontSize: '0.75rem', color: 'var(--accent-neon-pink)', fontWeight: 800, marginTop: '12px', textAlign: 'center', lineHeight: 1.4, borderTop: '1px solid var(--border-glass)', paddingTop: '16px', width: '100%' }}>
             ⚠️ 본 페이지와 파일(사진/영상)은 개인정보 보호를 위해 24시간 뒤 자동으로 완전히 만료 및 삭제 처리됩니다.
           </div>
         </div>
