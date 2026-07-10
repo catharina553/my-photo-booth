@@ -212,9 +212,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, shotO
           slots.forEach((slot) => {
             const v = videos[slot.videoIdx];
             const offset = offsets[slot.videoIdx] || { start: 0, end: 3 };
-            const duration = Math.max(0.5, offset.end - offset.start);
-            const relativeTime = elapsed % duration;
-            v.currentTime = offset.start + relativeTime;
+            
+            if (v.currentTime >= offset.end || v.ended) {
+              v.currentTime = offset.start;
+              v.play().catch(() => {});
+            }
 
             const px = (slot.left / 100) * width;
             const py = (slot.top / 100) * height;
