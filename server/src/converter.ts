@@ -1,7 +1,13 @@
 import { execFile } from 'child_process';
-import ffmpegPath from 'ffmpeg-static';
 import path from 'path';
 import fs from 'fs';
+
+let ffmpegPath: string | null = null;
+try {
+  ffmpegPath = require('ffmpeg-static');
+} catch (e) {
+  console.error('Failed to load ffmpeg-static binary path:', e);
+}
 
 export function convertWebmToMp4(inputPath: string, outputPath: string): Promise<void> {
   return new Promise((resolve, reject) => {
