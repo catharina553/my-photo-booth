@@ -15,6 +15,7 @@ export const App: React.FC = () => {
   const [capturedPhotos, setCapturedPhotos] = useState<string[]>([]);
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
   const [saveVideoOption, setSaveVideoOption] = useState<boolean>(true);
+  const [shotOffsets, setShotOffsets] = useState<any[]>([]);
   const [finishedCanvas, setFinishedCanvas] = useState<HTMLCanvasElement | null>(null);
   const [shareParamId, setShareParamId] = useState<string | null>(null);
   
@@ -44,6 +45,7 @@ export const App: React.FC = () => {
     setCapturedPhotos([]);
     setVideoBlob(null);
     setSaveVideoOption(true);
+    setShotOffsets([]);
     setFinishedCanvas(null);
     setStep('layout');
   };
@@ -202,9 +204,10 @@ export const App: React.FC = () => {
           <CameraBooth
             layout={layout}
             onBack={() => setStep('layout')}
-            onComplete={(photos, blob) => {
+            onComplete={(photos, blob, offsets) => {
               setCapturedPhotos(photos);
               setVideoBlob(blob || null);
+              setShotOffsets(offsets || []);
               setStep('customize');
             }}
           />
@@ -227,6 +230,7 @@ export const App: React.FC = () => {
           <ShareModal
             canvas={finishedCanvas}
             videoBlob={saveVideoOption ? videoBlob : null}
+            shotOffsets={saveVideoOption ? shotOffsets : undefined}
             onReset={handleReset}
           />
         )}

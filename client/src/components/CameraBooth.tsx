@@ -3,10 +3,15 @@ import { Camera, RefreshCw, Play, Check, Grid, FlipHorizontal, Clock, Sparkles, 
 import { sound } from '../utils/sound';
 import type { FrameLayout } from '../utils/canvasRenderer';
 
+export interface ShotOffset {
+  start: number;
+  end: number;
+}
+
 interface CameraBoothProps {
   layout: FrameLayout;
   onBack: () => void;
-  onComplete: (photos: string[], videoBlob?: Blob | null) => void;
+  onComplete: (photos: string[], videoBlob?: Blob | null, shotOffsets?: ShotOffset[]) => void;
 }
 
 export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComplete }) => {
@@ -14,6 +19,8 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
   const hiddenCanvasRef = useRef<HTMLCanvasElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
+  const recordingStartTimeRef = useRef<number>(0);
+  const shotOffsetsRef = useRef<ShotOffset[]>([]);
 
   const [streamActive, setStreamActive] = useState<boolean>(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -69,6 +76,8 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
     if (!videoRef.current || !videoRef.current.srcObject) return;
     const stream = videoRef.current.srcObject as MediaStream;
     recordedChunksRef.current = [];
+    recordingStartTimeRef.current = Date.now();
+    shotOffsetsRef.current = [];
     
     // Determine the browser-supported codecs/mime types
     let options = { mimeType: 'video/webm;codecs=vp9' };
@@ -192,6 +201,11 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
         setFlash(true);
         sound.playShutter();
         setTimeout(() => setFlash(false), 500);
+
+        const clickTime = Date.now();
+        const startOffset = Math.max(0, (clickTime - 3000 - recordingStartTimeRef.current) / 1000);
+        const endOffset = (clickTime - recordingStartTimeRef.current) / 1000;
+        shotOffsetsRef.current.push({ start: startOffset, end: endOffset });
 
         const photoData = takeSingleShot();
         const updatedList = [...currentList, photoData];
@@ -483,7 +497,8 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
                 <button
                   onClick={() => {
                     const orderedPhotos = selectedPhotoIndices.map(i => capturedPhotos[i]);
-                    onComplete(orderedPhotos, videoBlob);
+                    const orderedOffsets = selectedPhotoIndices.map(i => shotOffsetsRef.current[i]);
+                    onComplete(orderedPhotos, videoBlob, orderedOffsets);
                   }}
                   disabled={selectedPhotoIndices.length !== 4}
                   className="btn-primary"

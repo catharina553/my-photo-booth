@@ -1,9 +1,111 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Download, Camera, AlertCircle } from 'lucide-react';
 
 interface SharePageProps {
   photoId: string;
 }
+
+export interface ShotOffset {
+  start: number;
+  end: number;
+}
+
+const getSlotsCoordinates = (layout: string, frameColor: string = '') => {
+  if (layout === '2x6-strip-pair') {
+    const ys = [3.333, 23.556, 43.778, 64.000];
+    const lefts = [5.833, 57.500]; // left strip, right strip
+    const slots: { left: number; top: number; width: number; height: number; videoIdx: number }[] = [];
+    
+    lefts.forEach((leftX) => {
+      ys.forEach((y, i) => {
+        slots.push({
+          left: leftX,
+          top: y,
+          width: 40.000,
+          height: 18.889,
+          videoIdx: i
+        });
+      });
+    });
+    return slots;
+  } else {
+    // 2x2 grid layout
+    let photoW = 42.5;
+    let photoH = 36.667;
+    let col0 = 5.833;
+    let col1 = 51.667;
+    let row0 = 8.333;
+    let row1 = 47.222;
+    
+    if (frameColor.includes('yallu_')) {
+      photoW = 41.833;
+      photoH = 36.556;
+      col0 = 5.75;
+      col1 = 52.5;
+      row0 = 8.111;
+      row1 = 47.278;
+    } else if (frameColor.includes('mt_youth.png') || frameColor.includes('mt_priest')) {
+      photoW = 42.5;
+      photoH = 36.944;
+      col0 = 5.417;
+      col1 = 51.667;
+      row0 = 7.889;
+      row1 = 47.278;
+    }
+    
+    return [
+      { left: col0, top: row0, width: photoW, height: photoH, videoIdx: 0 },
+      { left: col1, top: row0, width: photoW, height: photoH, videoIdx: 1 },
+      { left: col0, top: row1, width: photoW, height: photoH, videoIdx: 2 },
+      { left: col1, top: row1, width: photoW, height: photoH, videoIdx: 3 }
+    ];
+  }
+};
+
+const VideoLoopPlayer: React.FC<{ src: string; start: number; end: number }> = ({ src, start, end }) => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    
+    const handleTimeUpdate = () => {
+      if (video.currentTime >= end) {
+        video.currentTime = start;
+      }
+    };
+    
+    video.addEventListener('timeupdate', handleTimeUpdate);
+    video.currentTime = start;
+    
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(error => {
+        console.warn("Autoplay was prevented:", error);
+      });
+    }
+    
+    return () => {
+      video.removeEventListener('timeupdate', handleTimeUpdate);
+    };
+  }, [src, start, end]);
+  
+  return (
+    <video
+      ref={videoRef}
+      src={src}
+      muted
+      loop={false}
+      playsInline
+      autoPlay
+      style={{
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover'
+      }}
+    />
+  );
+};
 
 export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
   const [photoData, setPhotoData] = useState<any | null>(null);
@@ -165,17 +267,41 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
           </div>
 
           <div style={{
+            position: 'relative',
             width: '100%',
             overflow: 'hidden',
             borderRadius: '14px',
             marginBottom: '20px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.12)'
+            boxShadow: '0 20px 40px rgba(0,0,0,0.12)',
+            background: 'var(--bg-tertiary)'
           }}>
             <img
               src={imageUrl}
               alt="Shared 4-Cut Photo"
               style={{ width: '100%', height: 'auto', display: 'block' }}
             />
+            {videoUrl && photoData.shotOffsets && photoData.shotOffsets.length === 4 && (
+              getSlotsCoordinates(photoData.layout, photoData.frameColor).map((slot, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    position: 'absolute',
+                    left: `${slot.left}%`,
+                    top: `${slot.top}%`,
+                    width: `${slot.width}%`,
+                    height: `${slot.height}%`,
+                    overflow: 'hidden',
+                    background: '#000'
+                  }}
+                >
+                  <VideoLoopPlayer
+                    src={videoUrl}
+                    start={photoData.shotOffsets[slot.videoIdx].start}
+                    end={photoData.shotOffsets[slot.videoIdx].end}
+                  />
+                </div>
+              ))
+            )}
           </div>
 
           <button

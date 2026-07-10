@@ -3,13 +3,16 @@ import { Download, RefreshCw, Smartphone, Sparkles } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import confetti from 'canvas-confetti';
 
+import type { ShotOffset } from './CameraBooth';
+
 interface ShareModalProps {
   canvas: HTMLCanvasElement;
   videoBlob: Blob | null;
+  shotOffsets?: ShotOffset[];
   onReset: () => void;
 }
 
-export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, onReset }) => {
+export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, shotOffsets, onReset }) => {
   const [photoId, setPhotoId] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string>('');
   const [isUploading, setIsUploading] = useState<boolean>(true);
@@ -177,7 +180,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, onRes
         body: JSON.stringify({
           title: 'BbotoBooth Session',
           imageDataUrl: dataUrl,
-          videoDataUrl: videoDataUrl
+          videoDataUrl: videoDataUrl,
+          shotOffsets: shotOffsets
         })
       });
 

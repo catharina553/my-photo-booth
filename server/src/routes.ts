@@ -56,7 +56,7 @@ router.get('/network', (req: Request, res: Response) => {
 // Upload a new 4-cut photo
 router.post('/photos', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { title = 'BbotoBooth Session', frameColor = '#ffffff', layout = '2x6-strip-pair', imageDataUrl, videoDataUrl } = req.body;
+    const { title = 'BbotoBooth Session', frameColor = '#ffffff', layout = '2x6-strip-pair', imageDataUrl, videoDataUrl, selectedIndices, shotOffsets } = req.body;
     
     if (!imageDataUrl) {
       res.status(400).json({ error: 'imageDataUrl is required' });
@@ -78,7 +78,9 @@ router.post('/photos', async (req: Request, res: Response): Promise<void> => {
       layout,
       createdAt,
       filename,
-      videoFilename
+      videoFilename,
+      selectedIndices,
+      shotOffsets
     }, imageDataUrl, videoDataUrl);
 
     // Upload photo to Google Drive

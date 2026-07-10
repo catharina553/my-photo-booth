@@ -2,6 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
+export interface ShotOffset {
+  start: number;
+  end: number;
+}
+
 export interface PhotoRecord {
   id: string;
   title: string;
@@ -11,6 +16,8 @@ export interface PhotoRecord {
   filename: string;
   videoFilename?: string;
   videoDriveLink?: string;
+  selectedIndices?: number[];
+  shotOffsets?: ShotOffset[];
 }
 
 export const UPLOADS_DIR = path.join(os.tmpdir(), 'bbotobooth_uploads');
