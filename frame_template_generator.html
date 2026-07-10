@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>뽀토부스 프레임 템플릿 생성기</title>
+<style>
+  body { font-family: sans-serif; background: #f0f0f0; padding: 40px; }
+  .preview { display: flex; gap: 40px; flex-wrap: wrap; }
+  canvas { border: 1px solid #ccc; max-height: 600px; width: auto; }
+  button { margin-top: 12px; display: block; padding: 10px 20px; background: #1d4ed8; color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+  h2 { margin-top: 0; }
+  .item { display: flex; flex-direction: column; align-items: center; }
+</style>
+</head>
+<body>
+<h1>뽀토부스 프레임 PNG 생성</h1>
+<p>각 캔버스는 인쇄 규격인 1200 × 1800 px (300 DPI 4×6인치) 입니다.</p>
+<div class="preview" id="preview"></div>
+
+<script>
+const W = 1200;
+const H = 1800;
+const PHOTO_FILL = '#ffffff';    // 사진 슬롯: 흰색
+const FRAME_BG = '#ffffff';      // 배경: 흰색
+const SLOT_BORDER = '#cccccc';   // 슬롯 테두리: 연한 회색
+const SLOT_LABEL_COLOR = '#aaaaaa';
+
+function makeCanvas() {
+  const c = document.createElement('canvas');
+  c.width = W;
+  c.height = H;
+  return c;
+}
+
+function drawSlot(ctx, x, y, w, h, label) {
+  // Fill
+  ctx.fillStyle = PHOTO_FILL;
+  ctx.fillRect(x, y, w, h);
+  // Border
+  ctx.strokeStyle = SLOT_BORDER;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(x, y, w, h);
+  // Label
+  ctx.fillStyle = SLOT_LABEL_COLOR;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = 'bold 32px sans-serif';
+  ctx.fillText(label, x + w / 2, y + h / 2);
+}
+
+// ──────────────────────────────────────────────
+// 1. 2x6 세로 4컷 스트립 (Strip Pair)
+// ──────────────────────────────────────────────
+function render2x6() {
+  const canvas = makeCanvas();
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle = FRAME_BG;
+  ctx.fillRect(0, 0, W, H);
+
+  const stripWidth = 540;
+  const paddingX = 40;
+  const gapX = 40;
+  const leftX1 = paddingX;
+  const leftX2 = paddingX + stripWidth + gapX;
+
+  const photoW = 480;
+  const photoH = 340;
+  const photoGapY = 24;
+  const startY = 60;
+
+  [leftX1, leftX2].forEach((stripX, stripIdx) => {
+    const photoStartX = stripX + (stripWidth - photoW) / 2;
+    for (let i = 0; i < 4; i++) {
+      const py = startY + i * (photoH + photoGapY);
+      drawSlot(ctx, photoStartX, py, photoW, photoH, `Photo ${i + 1}`);
+    }
+  });
+
+  // Center dashed cut line
+  ctx.save();
+  ctx.strokeStyle = '#999999';
+  ctx.globalAlpha = 0.4;
+  ctx.lineWidth = 2;
+  ctx.setLineDash([15, 15]);
+  ctx.beginPath();
+  ctx.moveTo(W / 2, 40);
+  ctx.lineTo(W / 2, H - 40);
+  ctx.stroke();
+  ctx.restore();
+
+  // Label
+  ctx.fillStyle = '#555555';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.font = 'bold 28px sans-serif';
+  ctx.fillText('2×6 세로 4컷 스트립 (1200×1800 px)', W / 2, H - 30);
+
+  return canvas;
+}
+
+// ──────────────────────────────────────────────
+// 2. 2x2 엽서 그리드
+// ──────────────────────────────────────────────
+function render2x2() {
+  const canvas = makeCanvas();
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle = FRAME_BG;
+  ctx.fillRect(0, 0, W, H);
+
+  const photoW = 510;
+  const photoH = 660;
+  const gapX = 40;
+  const gapY = 40;
+  const startX = (W - (photoW * 2 + gapX)) / 2;
+  const startY = 150;
+
+  for (let i = 0; i < 4; i++) {
+    const col = i % 2;
+    const row = Math.floor(i / 2);
+    const px = startX + col * (photoW + gapX);
+    const py = startY + row * (photoH + gapY);
+    drawSlot(ctx, px, py, photoW, photoH, `Photo ${i + 1}`);
+  }
+
+  // Label
+  ctx.fillStyle = '#555555';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+  ctx.font = 'bold 28px sans-serif';
+  ctx.fillText('2×2 엽서 그리드 (1200×1800 px)', W / 2, H - 30);
+
+  return canvas;
+}
+
+// ──────────────────────────────────────────────
+// Render & show
+// ──────────────────────────────────────────────
+function addItem(title, canvas, filename) {
+  const div = document.createElement('div');
+  div.className = 'item';
+  const h2 = document.createElement('h2');
+  h2.textContent = title;
+  div.appendChild(h2);
+  canvas.style.maxHeight = '500px';
+  canvas.style.width = 'auto';
+  div.appendChild(canvas);
+  const btn = document.createElement('button');
+  btn.textContent = `⬇️ ${filename} 다운로드`;
+  btn.onclick = () => {
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  };
+  div.appendChild(btn);
+  document.getElementById('preview').appendChild(div);
+}
+
+addItem('2×6 세로 4컷 스트립', render2x6(), 'frame_2x6_strip_white.png');
+addItem('2×2 엽서 그리드', render2x2(), 'frame_2x2_grid_white.png');
+</script>
+</body>
+</html>

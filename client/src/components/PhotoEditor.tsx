@@ -18,6 +18,7 @@ const FRAME_COLORS = [
   { name: '민트 글로우', value: '#a7f3d0' },
   { name: '아뉴스 - 양', value: '/templates/yallu_sheep.png' },
   { name: '아뉴스 - 바다', value: '/templates/yallu_sea.png' },
+  { name: '아뉴스 - 말씀 양', value: '/templates/mt_sheep_word.png' },
   { name: '아뉴스 MT1', value: '/templates/mt_priest2.png' }, // 신부님 + 학사님
   { name: '아뉴스 MT2', value: '/templates/mt_priest1.png' }, // 신부님
   { name: '아뉴스 MT (청년회)', value: '/templates/mt_youth.png' }
@@ -166,7 +167,7 @@ export const PhotoEditor: React.FC<PhotoEditorProps> = ({ photos, layout, onBack
               {FRAME_COLORS
                 .filter(c => {
                   // Hide Yallu templates and all MT character templates on 2x6 strip layouts
-                  if (layout === '2x6-strip-pair' && (c.value.includes('yallu_') || c.value.includes('mt_youth') || c.value.includes('mt_priest'))) {
+                  if (layout === '2x6-strip-pair' && (c.value.includes('yallu_') || c.value.includes('mt_'))) {
                     return false;
                   }
                   return true;
