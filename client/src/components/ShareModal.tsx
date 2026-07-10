@@ -89,6 +89,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, shotO
         };
         
         recorder.start(250);
+        video.playbackRate = 2.0; // Speed up compilation 2x (timelapse playback)
         video.play();
         
         let animationFrameId: number;
@@ -241,8 +242,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, shotO
       const startCompilation = async () => {
         await loadOverlay();
 
-        const width = photoCanvas.width;
-        const height = photoCanvas.height;
+        const width = photoCanvas.width / 2;
+        const height = photoCanvas.height / 2;
 
         const canvasElement = document.createElement('canvas');
         canvasElement.width = width;
@@ -298,7 +299,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, shotO
         let animationFrameId: number;
         const draw = () => {
           const elapsed = (Date.now() - compileStartTime) / 1000;
-          if (elapsed >= 5.0) {
+          if (elapsed >= 3.0) {
             cancelAnimationFrame(animationFrameId);
             videos.forEach(v => v.pause());
             if (recorder.state !== 'inactive') {
@@ -307,7 +308,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, shotO
             return;
           }
 
-          ctx.drawImage(photoCanvas, 0, 0);
+          ctx.drawImage(photoCanvas, 0, 0, width, height);
 
           slots.forEach((slot) => {
             const v = videos[slot.videoIdx];
@@ -346,27 +347,44 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, shotO
     try {
       const dataUrl = canvas.toDataURL('image/png');
       
+      const compileTasks: Promise<any>[] = [];
       let videoDataUrl: string | undefined = undefined;
+      let movingPhotoDataUrl: string | undefined = undefined;
+
       if (videoBlob) {
-        // Compile timelapse video with final frame appended
-        const compiledBlob = await compileFinalVideo(videoBlob, canvas);
-        videoDataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = () => reject(new Error('Failed to read compiled video file'));
-          reader.readAsDataURL(compiledBlob);
-        });
+        // Compile timelapse video with final frame appended (2x speed playback)
+        compileTasks.push(
+          compileFinalVideo(videoBlob, canvas).then(async (compiledBlob) => {
+            videoDataUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.onerror = () => reject(new Error('Failed to read compiled video file'));
+              reader.readAsDataURL(compiledBlob);
+            });
+          }).catch(err => {
+            console.error('Failed to compile raw timelapse video', err);
+          })
+        );
       }
 
-      let movingPhotoDataUrl: string | undefined = undefined;
       if (videoBlob && shotOffsets && shotOffsets.length === 4) {
-        const compiledMovingBlob = await compileMovingPhotoVideo(videoBlob, canvas, layout, frameColor, shotOffsets);
-        movingPhotoDataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = () => reject(new Error('Failed to read compiled moving photo video'));
-          reader.readAsDataURL(compiledMovingBlob);
-        });
+        // Compile 3s moving photo loop video (downscaled resolution)
+        compileTasks.push(
+          compileMovingPhotoVideo(videoBlob, canvas, layout, frameColor, shotOffsets).then(async (compiledMovingBlob) => {
+            movingPhotoDataUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.onerror = () => reject(new Error('Failed to read compiled moving photo video'));
+              reader.readAsDataURL(compiledMovingBlob);
+            });
+          }).catch(err => {
+            console.error('Failed to compile moving photo loop video', err);
+          })
+        );
+      }
+
+      if (compileTasks.length > 0) {
+        await Promise.all(compileTasks);
       }
 
       // 1. Get network discovery info
