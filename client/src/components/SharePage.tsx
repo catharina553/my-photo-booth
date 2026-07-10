@@ -214,7 +214,7 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
           )}
 
           <div style={{ fontSize: '0.75rem', color: 'var(--accent-neon-pink)', fontWeight: 800, marginTop: '12px', textAlign: 'center', lineHeight: 1.4 }}>
-            ⚠️ 본 페이지와 파일(사진/영상)은 개인정보 보호를 위해 3시간 뒤 자동으로 완전히 만료 및 삭제 처리됩니다.
+            ⚠️ 본 페이지와 파일(사진/영상)은 개인정보 보호를 위해 24시간 뒤 자동으로 완전히 만료 및 삭제 처리됩니다.
           </div>
         </div>
       )}

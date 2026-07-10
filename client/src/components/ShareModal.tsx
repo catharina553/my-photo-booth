@@ -31,6 +31,108 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, onRes
     uploadCanvasToBackend();
   }, []);
 
+  const compileFinalVideo = (rawVideoBlob: Blob, photoCanvas: HTMLCanvasElement): Promise<Blob> => {
+    return new Promise((resolve) => {
+      const video = document.createElement('video');
+      video.src = URL.createObjectURL(rawVideoBlob);
+      video.muted = true;
+      video.playsInline = true;
+      
+      video.onloadedmetadata = () => {
+        const width = video.videoWidth || 640;
+        const height = video.videoHeight || 480;
+        
+        const canvasElement = document.createElement('canvas');
+        canvasElement.width = width;
+        canvasElement.height = height;
+        const ctx = canvasElement.getContext('2d');
+        if (!ctx) {
+          resolve(rawVideoBlob);
+          return;
+        }
+        
+        const chunks: Blob[] = [];
+        let stream: MediaStream;
+        try {
+          stream = (canvasElement as any).captureStream(30);
+        } catch (e) {
+          try {
+            stream = (canvasElement as any).captureStream();
+          } catch (e2) {
+            resolve(rawVideoBlob);
+            return;
+          }
+        }
+        
+        let options = { mimeType: 'video/webm;codecs=vp9' };
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+          options = { mimeType: 'video/webm;codecs=vp8' };
+          if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            options = { mimeType: 'video/webm' };
+            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+              options = { mimeType: '' };
+            }
+          }
+        }
+        
+        const recorder = new MediaRecorder(stream, options);
+        recorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) chunks.push(e.data);
+        };
+        recorder.onstop = () => {
+          resolve(new Blob(chunks, { type: 'video/webm' }));
+        };
+        
+        recorder.start(250);
+        video.play();
+        
+        let animationFrameId: number;
+        const drawFrame = () => {
+          if (video.paused || video.ended) {
+            cancelAnimationFrame(animationFrameId);
+            
+            // Draw final 4-cut photo card scaled to fit center on black backdrop
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, width, height);
+            
+            const scale = Math.min(width / photoCanvas.width, height / photoCanvas.height);
+            const w = photoCanvas.width * scale;
+            const h = photoCanvas.height * scale;
+            const x = (width - w) / 2;
+            const y = (height - h) / 2;
+            ctx.drawImage(photoCanvas, x, y, w, h);
+            
+            // Hold for 3 seconds (90 frames at 30fps)
+            let framesLeft = 90;
+            const holdFrame = () => {
+              if (framesLeft > 0) {
+                framesLeft--;
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, width, height);
+                ctx.drawImage(photoCanvas, x, y, w, h);
+                requestAnimationFrame(holdFrame);
+              } else {
+                if (recorder.state !== 'inactive') {
+                  recorder.stop();
+                }
+              }
+            };
+            holdFrame();
+            return;
+          }
+          
+          ctx.drawImage(video, 0, 0, width, height);
+          animationFrameId = requestAnimationFrame(drawFrame);
+        };
+        
+        video.onplay = () => drawFrame();
+        video.onerror = () => resolve(rawVideoBlob);
+      };
+      
+      video.onerror = () => resolve(rawVideoBlob);
+    });
+  };
+
   const uploadCanvasToBackend = async (retryCount = 0) => {
     setIsUploading(true);
     setUploadError(null);
@@ -39,11 +141,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, onRes
       
       let videoDataUrl: string | undefined = undefined;
       if (videoBlob) {
+        // Compile timelapse video with final frame appended
+        const compiledBlob = await compileFinalVideo(videoBlob, canvas);
         videoDataUrl = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = () => reject(new Error('Failed to read video file'));
-          reader.readAsDataURL(videoBlob);
+          reader.onerror = () => reject(new Error('Failed to read compiled video file'));
+          reader.readAsDataURL(compiledBlob);
         });
       }
 
@@ -241,7 +345,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, onRes
                   아이폰 또는 안드로이드 카메라로 이 QR 코드를 비추면 스마트폰으로 바로 저장하실 수 있습니다.
                 </p>
                 <div style={{ fontSize: '0.78rem', color: 'var(--accent-neon-pink)', fontWeight: 800, marginBottom: '14px' }}>
-                  ⚠️ QR 코드와 미디어 파일은 개인정보 보호를 위해 3시간 뒤 만료됩니다.
+                  ⚠️ QR 코드와 미디어 파일은 개인정보 보호를 위해 24시간 뒤 만료됩니다.
                 </div>
 
                 {/* Share Link box */}

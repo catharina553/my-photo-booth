@@ -64,9 +64,9 @@ export function getPhotoRecord(id: string): PhotoRecord | undefined {
   const record = records.find(r => r.id === id);
   if (!record) return undefined;
 
-  // Check if expired (3 hours based on short-term personal data protection guidelines)
+  // Check if expired (24 hours based on short-term personal data protection guidelines)
   const now = new Date().getTime();
-  const EXPIRE_MS = 3 * 60 * 60 * 1000;
+  const EXPIRE_MS = 24 * 60 * 60 * 1000;
   const createdTime = new Date(record.createdAt).getTime();
 
   if (now - createdTime > EXPIRE_MS) {
@@ -91,7 +91,7 @@ export function getPhotoRecord(id: string): PhotoRecord | undefined {
 export function getAllPhotos(): PhotoRecord[] {
   const records = loadDb();
   const now = new Date().getTime();
-  const EXPIRE_MS = 3 * 60 * 60 * 1000;
+  const EXPIRE_MS = 24 * 60 * 60 * 1000;
   // Return only non-expired photos
   return records
     .filter(r => now - new Date(r.createdAt).getTime() <= EXPIRE_MS)
@@ -102,7 +102,7 @@ export function cleanupExpiredPhotos() {
   try {
     const records = loadDb();
     const now = new Date().getTime();
-    const EXPIRE_MS = 3 * 60 * 60 * 1000;
+    const EXPIRE_MS = 24 * 60 * 60 * 1000;
     
     const validRecords: PhotoRecord[] = [];
     let deletedCount = 0;
@@ -128,7 +128,7 @@ export function cleanupExpiredPhotos() {
     
     if (deletedCount > 0) {
       saveDb(validRecords);
-      console.log(`🧹 [Cleanup] Automatically removed ${deletedCount} expired photos & videos (>3h).`);
+      console.log(`🧹 [Cleanup] Automatically removed ${deletedCount} expired photos & videos (>24h).`);
     }
   } catch (err) {
     console.error('[Cleanup Error] Failed to run photo/video expiration cleanup:', err);
