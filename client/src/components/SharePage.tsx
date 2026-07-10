@@ -5,11 +5,6 @@ interface SharePageProps {
   photoId: string;
 }
 
-export interface ShotOffset {
-  start: number;
-  end: number;
-}
-
 export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
   const [photoData, setPhotoData] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -25,19 +20,19 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
   const fetchPhotoDetails = async () => {
     setLoading(true);
     setError(null);
-    
+
     // Set a 45-second timeout since Render free servers take up to 50 seconds to wake up from cold start
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 45000);
-    
+
     try {
       const res = await fetch(`${apiHost}/api/photos/${photoId}`, {
         signal: controller.signal
       });
       clearTimeout(timeoutId);
-      
+
       if (!res.ok) {
-        throw new Error('사진 세션을 찾을 수 없거나 이미 만료되었습니다. (최대 72시간 보관)');
+        throw new Error('사진 세션을 찾을 수 없거나 이미 만료되었습니다.');
       }
       const data = await res.json();
       setPhotoData(data);
@@ -54,20 +49,11 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
     }
   };
 
-  const imageUrl = photoData ? (isLocalhost ? `http://${window.location.hostname}:3001/uploads/${photoData.filename}` : `${window.location.protocol}//${window.location.host}/uploads/${photoData.filename}`) : '';
-  const movingPhotoUrl = photoData && photoData.movingPhotoFilename ? (isLocalhost ? `http://${window.location.hostname}:3001/uploads/${photoData.movingPhotoFilename}` : `${window.location.protocol}//${window.location.host}/uploads/${photoData.movingPhotoFilename}`) : '';
-
-  const handleDownloadMovingPhoto = () => {
-    if (!movingPhotoUrl) return;
-    const a = document.createElement('a');
-    a.href = movingPhotoUrl;
-    const ext = photoData.movingPhotoFilename.split('.').pop() || 'webm';
-    a.download = `moving-photo-${photoId}.${ext}`;
-    a.target = '_blank';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
+  const imageUrl = photoData
+    ? (isLocalhost
+        ? `http://${window.location.hostname}:3001/uploads/${photoData.filename}`
+        : `${window.location.protocol}//${window.location.host}/uploads/${photoData.filename}`)
+    : '';
 
   const handleDownloadMobile = async () => {
     if (!imageUrl) return;
@@ -153,10 +139,10 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
           maxWidth: '500px',
           width: '100%'
         }}>
-          {/* [Section 1] Static Photo Card */}
-          <div style={{ width: '100%', marginBottom: '32px' }}>
+          {/* Static Photo Card */}
+          <div style={{ width: '100%' }}>
             <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              📸 최종 인화용 사진 (Static)
+              📸 4컷 사진
             </h3>
             <div style={{
               width: '100%',
@@ -164,11 +150,11 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
               borderRadius: '14px',
               boxShadow: '0 10px 25px rgba(0,0,0,0.08)',
               background: 'var(--bg-tertiary)',
-              marginBottom: '12px'
+              marginBottom: '16px'
             }}>
               <img
                 src={imageUrl}
-                alt="Static 4-Cut Photo"
+                alt="4-Cut Photo"
                 style={{ width: '100%', height: 'auto', display: 'block' }}
               />
             </div>
@@ -181,45 +167,8 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
             </button>
           </div>
 
-          {/* [Section 2] Live Moving Photo Card */}
-          {movingPhotoUrl && (
-            <div style={{ width: '100%', borderTop: '1px solid var(--border-glass)', paddingTop: '32px', marginBottom: '32px' }}>
-              <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                ✨ 움직이는 포토카드 (Live)
-              </h3>
-              <div style={{
-                position: 'relative',
-                width: '100%',
-                overflow: 'hidden',
-                borderRadius: '14px',
-                boxShadow: '0 10px 25px rgba(0,0,0,0.08)',
-                background: '#000',
-                marginBottom: '12px'
-              }}>
-                <video
-                  src={movingPhotoUrl}
-                  loop
-                  muted
-                  autoPlay
-                  playsInline
-                  style={{ width: '100%', height: 'auto', display: 'block' }}
-                />
-              </div>
-              <button
-                onClick={handleDownloadMovingPhoto}
-                className="btn-primary"
-                style={{ width: '100%', padding: '14px', fontSize: '1rem', borderRadius: '14px', justifyContent: 'center', marginTop: '12px' }}
-              >
-                <Download size={18} /> 움직이는 포토카드 (동영상) 저장
-              </button>
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.4, marginTop: '10px' }}>
-                💡 4개의 컷이 각자 움직이는 고유한 루프 포토카드 동영상 파일입니다.
-              </p>
-            </div>
-          )}
-
-          <div style={{ fontSize: '0.75rem', color: 'var(--accent-neon-pink)', fontWeight: 800, marginTop: '12px', textAlign: 'center', lineHeight: 1.4, borderTop: '1px solid var(--border-glass)', paddingTop: '16px', width: '100%' }}>
-            ⚠️ 본 페이지와 파일은 개인정보 보호 및 서버 용량 관리를 위해 즉시 스마트폰 사진첩에 다운로드하여 소장해 주시기 바랍니다. (잠시 후 자동 만료 및 완전히 삭제 처리됩니다.)
+          <div style={{ fontSize: '0.75rem', color: 'var(--accent-neon-pink)', fontWeight: 800, marginTop: '20px', textAlign: 'center', lineHeight: 1.4, borderTop: '1px solid var(--border-glass)', paddingTop: '16px', width: '100%' }}>
+            ⚠️ 즉시 저장해 주세요! 본 페이지는 잠시 후 자동으로 만료됩니다.
           </div>
         </div>
       )}

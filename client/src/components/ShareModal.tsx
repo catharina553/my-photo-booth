@@ -3,18 +3,14 @@ import { Download, RefreshCw, Smartphone, Sparkles } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import confetti from 'canvas-confetti';
 
-import type { ShotOffset } from './CameraBooth';
-
 interface ShareModalProps {
   canvas: HTMLCanvasElement;
-  videoBlob: Blob | null;
-  shotOffsets?: ShotOffset[];
   layout: string;
   frameColor: string;
   onReset: () => void;
 }
 
-export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, shotOffsets, layout, frameColor, onReset }) => {
+export const ShareModal: React.FC<ShareModalProps> = ({ canvas, layout, frameColor, onReset }) => {
   const [photoId, setPhotoId] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string>('');
   const [isUploading, setIsUploading] = useState<boolean>(true);
@@ -36,230 +32,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, shotO
     uploadCanvasToBackend();
   }, []);
 
-
-
-  const getSlotsCoordinates = (layoutStyle: string, colorVal: string = '') => {
-    if (layoutStyle === '2x6-strip-pair') {
-      const ys = [3.333, 23.556, 43.778, 64.000];
-      const lefts = [5.833, 57.500];
-      const slots: { left: number; top: number; width: number; height: number; videoIdx: number }[] = [];
-      lefts.forEach((leftX) => {
-        ys.forEach((y, i) => {
-          slots.push({
-            left: leftX,
-            top: y,
-            width: 40.000,
-            height: 18.889,
-            videoIdx: i
-          });
-        });
-      });
-      return slots;
-    } else {
-      let photoW = 42.5;
-      let photoH = 36.667;
-      let col0 = 5.833;
-      let col1 = 51.667;
-      let row0 = 8.333;
-      let row1 = 47.222;
-      
-      if (colorVal.includes('yallu_')) {
-        photoW = 41.833;
-        photoH = 36.556;
-        col0 = 5.75;
-        col1 = 52.5;
-        row0 = 8.111;
-        row1 = 47.278;
-      } else if (colorVal.includes('mt_youth.png') || colorVal.includes('mt_priest')) {
-        photoW = 42.5;
-        photoH = 36.944;
-        col0 = 5.417;
-        col1 = 51.667;
-        row0 = 7.889;
-        row1 = 47.278;
-      }
-      return [
-        { left: col0, top: row0, width: photoW, height: photoH, videoIdx: 0 },
-        { left: col1, top: row0, width: photoW, height: photoH, videoIdx: 1 },
-        { left: col0, top: row1, width: photoW, height: photoH, videoIdx: 2 },
-        { left: col1, top: row1, width: photoW, height: photoH, videoIdx: 3 }
-      ];
-    }
-  };
-
-  const compileMovingPhotoVideo = (
-    rawVideoBlob: Blob,
-    photoCanvas: HTMLCanvasElement,
-    layoutStyle: string,
-    colorVal: string,
-    offsets: ShotOffset[]
-  ): Promise<Blob> => {
-    return new Promise((resolve) => {
-      const videos = [0, 1, 2, 3].map(() => {
-        const v = document.createElement('video');
-        v.src = URL.createObjectURL(rawVideoBlob);
-        v.muted = true;
-        v.playsInline = true;
-        return v;
-      });
-
-      const isImageFrame = colorVal.startsWith('data:image/') ||
-                           colorVal.startsWith('http') ||
-                           colorVal.includes('.png') ||
-                           colorVal.startsWith('/templates/');
-
-      let templateImg: HTMLImageElement | null = null;
-      const loadOverlay = async () => {
-        if (isImageFrame) {
-          try {
-            templateImg = new Image();
-            templateImg.crossOrigin = 'anonymous';
-            await new Promise((res, rej) => {
-              templateImg!.onload = res;
-              templateImg!.onerror = rej;
-              templateImg!.src = colorVal;
-            });
-          } catch (e) {
-            console.error("Failed to load overlay in moving compiler", e);
-          }
-        }
-      };
-
-      let loadedCount = 0;
-      const onVideoLoaded = () => {
-        loadedCount++;
-        if (loadedCount === 4) {
-          startCompilation();
-        }
-      };
-
-      videos.forEach(v => {
-        v.onloadedmetadata = onVideoLoaded;
-        v.onerror = () => resolve(rawVideoBlob);
-      });
-
-      const startCompilation = async () => {
-        await loadOverlay();
-
-        const width = photoCanvas.width / 2;
-        const height = photoCanvas.height / 2;
-
-        const canvasElement = document.createElement('canvas');
-        canvasElement.width = width;
-        canvasElement.height = height;
-        const ctx = canvasElement.getContext('2d');
-        if (!ctx) {
-          resolve(rawVideoBlob);
-          return;
-        }
-
-        const chunks: Blob[] = [];
-        let stream: MediaStream;
-        try {
-          stream = (canvasElement as any).captureStream(30);
-        } catch (e) {
-          try {
-            stream = (canvasElement as any).captureStream();
-          } catch (e2) {
-            resolve(rawVideoBlob);
-            return;
-          }
-        }
-
-        let options = { mimeType: 'video/webm;codecs=vp9' };
-        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-          options = { mimeType: 'video/webm;codecs=vp8' };
-          if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-            options = { mimeType: 'video/webm' };
-            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-              options = { mimeType: '' };
-            }
-          }
-        }
-
-        const recorder = new MediaRecorder(stream, options);
-        recorder.ondataavailable = (e) => {
-          if (e.data && e.data.size > 0) chunks.push(e.data);
-        };
-        recorder.onstop = () => {
-          resolve(new Blob(chunks, { type: 'video/webm' }));
-        };
-
-        videos.forEach((v, idx) => {
-          const offset = offsets[idx] || { start: 0, end: 3 };
-          v.currentTime = offset.start;
-          v.play();
-        });
-
-        recorder.start(250);
-        const compileStartTime = Date.now();
-        const slots = getSlotsCoordinates(layoutStyle, colorVal);
-
-        let animationFrameId: number;
-        const draw = () => {
-          const elapsed = (Date.now() - compileStartTime) / 1000;
-          if (elapsed >= 3.0) {
-            cancelAnimationFrame(animationFrameId);
-            videos.forEach(v => v.pause());
-            if (recorder.state !== 'inactive') {
-              recorder.stop();
-            }
-            return;
-          }
-
-          ctx.drawImage(photoCanvas, 0, 0, width, height);
-
-          slots.forEach((slot) => {
-            const v = videos[slot.videoIdx];
-            const offset = offsets[slot.videoIdx] || { start: 0, end: 3 };
-            
-            if (v.currentTime >= offset.end || v.ended) {
-              v.currentTime = offset.start;
-              v.play().catch(() => {});
-            }
-
-            const px = (slot.left / 100) * width;
-            const py = (slot.top / 100) * height;
-            const pw = (slot.width / 100) * width;
-            const ph = (slot.height / 100) * height;
-
-            ctx.save();
-            ctx.translate(px + pw, py);
-            ctx.scale(-1, 1);
-            ctx.drawImage(v, 0, 0, pw, ph);
-            ctx.restore();
-          });
-
-          if (isImageFrame && templateImg) {
-            ctx.drawImage(templateImg, 0, 0, width, height);
-          }
-
-          animationFrameId = requestAnimationFrame(draw);
-        };
-
-        draw();
-      };
-    });
-  };
-
   const uploadCanvasToBackend = async (retryCount = 0) => {
     setIsUploading(true);
     setUploadError(null);
     try {
       const dataUrl = canvas.toDataURL('image/png');
-      
-      let movingPhotoDataUrl: string | undefined = undefined;
-
-      if (videoBlob && shotOffsets && shotOffsets.length === 4) {
-        // Compile 3s moving photo loop video (downscaled resolution)
-        const compiledMovingBlob = await compileMovingPhotoVideo(videoBlob, canvas, layout, frameColor, shotOffsets);
-        movingPhotoDataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.onerror = () => reject(new Error('Failed to read compiled moving photo video'));
-          reader.readAsDataURL(compiledMovingBlob);
-        });
-      }
 
       // 1. Get network discovery info
       const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -287,8 +64,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, shotO
         body: JSON.stringify({
           title: 'BbotoBooth Session',
           imageDataUrl: dataUrl,
-          movingPhotoDataUrl: movingPhotoDataUrl,
-          shotOffsets: shotOffsets,
           layout: layout,
           frameColor: frameColor
         })
@@ -301,12 +76,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, shotO
       const data = await res.json();
       if (data && data.id) {
         setPhotoId(data.id);
-        
+
         // If hosted on tunnel/public web, use the hosted URL. Otherwise, fallback to LAN IP.
         const mobileShareLink = isLocalhost
           ? `http://${lanIp}:${window.location.port || 5173}/?share=${data.id}`
           : `${window.location.protocol}//${window.location.host}/?share=${data.id}`;
-        
+
         setShareUrl(mobileShareLink);
         setIsUploading(false);
       }
@@ -327,7 +102,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, shotO
   const handleDownloadImage = () => {
     canvas.toBlob(async (blob) => {
       if (!blob) return;
-      
+
       const file = new File([blob], `photo-${Date.now()}.png`, { type: 'image/png' });
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
@@ -352,8 +127,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, shotO
       URL.revokeObjectURL(url);
     }, 'image/png');
   };
-
-
 
   const copyShareLink = () => {
     if (!shareUrl) return;
@@ -408,7 +181,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, shotO
           <div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '6px' }}>공유 및 다운로드</h2>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              스마트폰 카메라로 아래 QR 코드를 스캔하여 네컷 사진과 촬영 비디오(타임랩스)를 즉시 저장하고 확인하실 수 있습니다.
+              스마트폰 카메라로 아래 QR 코드를 스캔하여 네컷 사진을 즉시 저장하고 확인하실 수 있습니다.
             </p>
           </div>
 
@@ -458,7 +231,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, shotO
                   아이폰 또는 안드로이드 카메라로 이 QR 코드를 비추면 스마트폰으로 바로 저장하실 수 있습니다.
                 </p>
                 <div style={{ fontSize: '0.78rem', color: 'var(--accent-neon-pink)', fontWeight: 800, marginBottom: '14px', lineHeight: 1.4 }}>
-                  ⚠️ 본 페이지와 파일은 개인정보 보호 및 서버 용량 관리를 위해 즉시 스마트폰 사진첩에 다운로드하여 소장해 주시기 바랍니다. (잠시 후 자동 만료 및 완전히 삭제 처리됩니다.)
+                  ⚠️ 즉시 스마트폰 사진첩에 저장해 주세요! (잠시 후 자동 만료됩니다)
                 </div>
 
                 {/* Share Link box */}

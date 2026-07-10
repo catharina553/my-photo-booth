@@ -3,24 +3,15 @@ import { Camera, RefreshCw, Play, Check, Grid, FlipHorizontal, Clock, Sparkles, 
 import { sound } from '../utils/sound';
 import type { FrameLayout } from '../utils/canvasRenderer';
 
-export interface ShotOffset {
-  start: number;
-  end: number;
-}
-
 interface CameraBoothProps {
   layout: FrameLayout;
   onBack: () => void;
-  onComplete: (photos: string[], videoBlob?: Blob | null, shotOffsets?: ShotOffset[]) => void;
+  onComplete: (photos: string[]) => void;
 }
 
 export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComplete }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hiddenCanvasRef = useRef<HTMLCanvasElement>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const recordedChunksRef = useRef<Blob[]>([]);
-  const recordingStartTimeRef = useRef<number>(0);
-  const shotOffsetsRef = useRef<ShotOffset[]>([]);
 
   const [streamActive, setStreamActive] = useState<boolean>(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -29,7 +20,6 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
   const [timerSeconds, setTimerSeconds] = useState<number>(3); // 3 seconds default
 
   const [capturedPhotos, setCapturedPhotos] = useState<string[]>([]);
-  const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
   const [isCapturingSession, setIsCapturingSession] = useState<boolean>(false);
   const [currentShotIndex, setCurrentShotIndex] = useState<number>(0);
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -72,51 +62,7 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
     setStreamActive(false);
   };
 
-  const startRecording = () => {
-    if (!videoRef.current || !videoRef.current.srcObject) return;
-    const stream = videoRef.current.srcObject as MediaStream;
-    recordedChunksRef.current = [];
-    recordingStartTimeRef.current = Date.now();
-    shotOffsetsRef.current = [];
-    
-    // Determine the browser-supported codecs/mime types
-    let options = { mimeType: 'video/webm;codecs=vp9' };
-    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-      options = { mimeType: 'video/webm;codecs=vp8' };
-      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-        options = { mimeType: 'video/webm' };
-        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-          options = { mimeType: '' }; // browser default fallback
-        }
-      }
-    }
-    
-    try {
-      const recorder = new MediaRecorder(stream, options);
-      recorder.ondataavailable = (event) => {
-        if (event.data && event.data.size > 0) {
-          recordedChunksRef.current.push(event.data);
-        }
-      };
-      recorder.onstop = () => {
-        const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
-        setVideoBlob(blob);
-        console.log('📹 Background video blob ready. Size:', blob.size);
-      };
-      mediaRecorderRef.current = recorder;
-      recorder.start(250); // slice chunks every 250ms
-      console.log('📹 Background webcam recording started!');
-    } catch (e) {
-      console.error('Failed to start MediaRecorder:', e);
-    }
-  };
 
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
-      console.log('📹 Background webcam recording stopped.');
-    }
-  };
 
   // Capture single frame from video element
   const takeSingleShot = (): string => {
@@ -166,11 +112,9 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
   const startAutomatedSession = () => {
     if (!streamActive || isCapturingSession) return;
     setCapturedPhotos([]);
-    setVideoBlob(null);
     setSelectedPhotoIndices([]);
     setIsCapturingSession(true);
     setCurrentShotIndex(1);
-    startRecording();
     runShotSequence(1, []);
   };
 
@@ -178,7 +122,6 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
     if (shotNum > 6) {
       setIsCapturingSession(false);
       setCountdown(null);
-      stopRecording();
       stopCamera();
       return;
     }
@@ -196,16 +139,11 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
       } else {
         clearInterval(interval);
         setCountdown(0);
-        
+
         // Trigger Flash & Shutter Sound
         setFlash(true);
         sound.playShutter();
         setTimeout(() => setFlash(false), 500);
-
-        const clickTime = Date.now();
-        const startOffset = Math.max(0, (clickTime - 3000 - recordingStartTimeRef.current) / 1000);
-        const endOffset = (clickTime - recordingStartTimeRef.current) / 1000;
-        shotOffsetsRef.current.push({ start: startOffset, end: endOffset });
 
         const photoData = takeSingleShot();
         const updatedList = [...currentList, photoData];
@@ -218,7 +156,6 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
           } else {
             setIsCapturingSession(false);
             setCountdown(null);
-            stopRecording();
             stopCamera(); // Turn off camera to save resources during photo selection
           }
         }, 1200);
@@ -228,7 +165,6 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
 
   const handleRetakeAll = () => {
     setCapturedPhotos([]);
-    setVideoBlob(null);
     setSelectedPhotoIndices([]);
     startCamera();
   };
@@ -497,8 +433,7 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
                 <button
                   onClick={() => {
                     const orderedPhotos = selectedPhotoIndices.map(i => capturedPhotos[i]);
-                    const orderedOffsets = selectedPhotoIndices.map(i => shotOffsetsRef.current[i]);
-                    onComplete(orderedPhotos, videoBlob, orderedOffsets);
+                    onComplete(orderedPhotos);
                   }}
                   disabled={selectedPhotoIndices.length !== 4}
                   className="btn-primary"

@@ -2,11 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
-export interface ShotOffset {
-  start: number;
-  end: number;
-}
-
 export interface PhotoRecord {
   id: string;
   title: string;
@@ -14,12 +9,7 @@ export interface PhotoRecord {
   layout: string;
   createdAt: string;
   filename: string;
-  videoFilename?: string;
-  videoDriveLink?: string;
-  movingPhotoFilename?: string;
-  movingPhotoDriveLink?: string;
   selectedIndices?: number[];
-  shotOffsets?: ShotOffset[];
 }
 
 export const UPLOADS_DIR = path.join(os.tmpdir(), 'bbotobooth_uploads');
@@ -47,9 +37,7 @@ function saveDb(records: PhotoRecord[]) {
 
 export function savePhotoRecord(
   record: PhotoRecord,
-  base64Data: string,
-  videoBase64?: string,
-  movingPhotoBase64?: string
+  base64Data: string
 ): PhotoRecord {
   const records = loadDb();
   
@@ -60,21 +48,6 @@ export function savePhotoRecord(
   const filePath = path.join(UPLOADS_DIR, record.filename);
   fs.writeFileSync(filePath, buffer);
 
-  if (videoBase64 && record.videoFilename) {
-    // Remove data:video/webm;base64, or data:video/mp4;base64, prefix if present
-    const cleanVideoBase64 = videoBase64.replace(/^data:video\/\w+;base64,/, '');
-    const videoBuffer = Buffer.from(cleanVideoBase64, 'base64');
-    const videoPath = path.join(UPLOADS_DIR, record.videoFilename);
-    fs.writeFileSync(videoPath, videoBuffer);
-  }
-
-  if (movingPhotoBase64 && record.movingPhotoFilename) {
-    const cleanMovingBase64 = movingPhotoBase64.replace(/^data:video\/\w+;base64,/, '');
-    const movingBuffer = Buffer.from(cleanMovingBase64, 'base64');
-    const movingPath = path.join(UPLOADS_DIR, record.movingPhotoFilename);
-    fs.writeFileSync(movingPath, movingBuffer);
-  }
-  
   records.push(record);
   saveDb(records);
   return record;
@@ -95,18 +68,6 @@ export function getPhotoRecord(id: string): PhotoRecord | undefined {
     const filePath = path.join(UPLOADS_DIR, record.filename);
     if (fs.existsSync(filePath)) {
       try { fs.unlinkSync(filePath); } catch (e) {}
-    }
-    if (record.videoFilename) {
-      const videoPath = path.join(UPLOADS_DIR, record.videoFilename);
-      if (fs.existsSync(videoPath)) {
-        try { fs.unlinkSync(videoPath); } catch (e) {}
-      }
-    }
-    if (record.movingPhotoFilename) {
-      const movingPath = path.join(UPLOADS_DIR, record.movingPhotoFilename);
-      if (fs.existsSync(movingPath)) {
-        try { fs.unlinkSync(movingPath); } catch (e) {}
-      }
     }
     const updated = records.filter(r => r.id !== id);
     saveDb(updated);
@@ -141,18 +102,6 @@ export function cleanupExpiredPhotos() {
         if (fs.existsSync(filePath)) {
           try { fs.unlinkSync(filePath); } catch (e) {}
         }
-        if (record.videoFilename) {
-          const videoPath = path.join(UPLOADS_DIR, record.videoFilename);
-          if (fs.existsSync(videoPath)) {
-            try { fs.unlinkSync(videoPath); } catch (e) {}
-          }
-        }
-        if (record.movingPhotoFilename) {
-          const movingPath = path.join(UPLOADS_DIR, record.movingPhotoFilename);
-          if (fs.existsSync(movingPath)) {
-            try { fs.unlinkSync(movingPath); } catch (e) {}
-          }
-        }
         deletedCount++;
       } else {
         validRecords.push(record);
@@ -161,9 +110,9 @@ export function cleanupExpiredPhotos() {
     
     if (deletedCount > 0) {
       saveDb(validRecords);
-      console.log(`🧹 [Cleanup] Automatically removed ${deletedCount} expired photos & videos (>24h).`);
+      console.log(`🧹 [Cleanup] Automatically removed ${deletedCount} expired photos (>24h).`);
     }
   } catch (err) {
-    console.error('[Cleanup Error] Failed to run photo/video expiration cleanup:', err);
+    console.error('[Cleanup Error] Failed to run photo expiration cleanup:', err);
   }
 }

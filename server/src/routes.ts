@@ -56,7 +56,7 @@ router.get('/network', (req: Request, res: Response) => {
 // Upload a new 4-cut photo
 router.post('/photos', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { title = 'BbotoBooth Session', frameColor = '#ffffff', layout = '2x6-strip-pair', imageDataUrl, movingPhotoDataUrl, selectedIndices, shotOffsets } = req.body;
+    const { title = 'BbotoBooth Session', frameColor = '#ffffff', layout = '2x6-strip-pair', imageDataUrl, selectedIndices } = req.body;
     
     if (!imageDataUrl) {
       res.status(400).json({ error: 'imageDataUrl is required' });
@@ -67,9 +67,6 @@ router.post('/photos', async (req: Request, res: Response): Promise<void> => {
     const filename = `photo-${id}.png`;
     const createdAt = new Date().toISOString();
     
-    const tempMovingName = movingPhotoDataUrl ? `temp-moving-${id}.webm` : undefined;
-    const movingPhotoFilename = movingPhotoDataUrl ? `moving-photo-${id}.mp4` : undefined;
-
     const record = savePhotoRecord({
       id,
       title,
@@ -77,40 +74,8 @@ router.post('/photos', async (req: Request, res: Response): Promise<void> => {
       layout,
       createdAt,
       filename,
-      movingPhotoFilename: tempMovingName,
-      selectedIndices,
-      shotOffsets
-    }, imageDataUrl, undefined, movingPhotoDataUrl);
-
-    // Convert WebM to MP4 for maximum iOS/Android native player support
-    const { convertWebmToMp4 } = require('./converter');
-    const fs = require('fs');
-
-    if (tempMovingName && movingPhotoFilename) {
-      const inputPath = path.join(UPLOADS_DIR, tempMovingName);
-      const outputPath = path.join(UPLOADS_DIR, movingPhotoFilename);
-      try {
-        await convertWebmToMp4(inputPath, outputPath);
-        if (fs.existsSync(inputPath)) {
-          fs.unlinkSync(inputPath);
-        }
-        record.movingPhotoFilename = movingPhotoFilename;
-      } catch (err) {
-        console.error("FFmpeg conversion failed for moving photo loop, fallback to webm", err);
-        record.movingPhotoFilename = tempMovingName;
-      }
-    }
-
-    // Persist finalized .mp4 filenames into db.json
-    const dbPath = path.join(UPLOADS_DIR, 'db.json');
-    if (fs.existsSync(dbPath)) {
-      const dbData = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
-      const rec = dbData.find((r: any) => r.id === id);
-      if (rec) {
-        rec.movingPhotoFilename = record.movingPhotoFilename;
-        fs.writeFileSync(dbPath, JSON.stringify(dbData, null, 2), 'utf8');
-      }
-    }
+      selectedIndices
+    }, imageDataUrl);
 
     // Upload photo to Google Drive
     const localFilePath = path.join(UPLOADS_DIR, filename);
@@ -127,40 +92,12 @@ router.post('/photos', async (req: Request, res: Response): Promise<void> => {
       console.error(driveErr.message || driveErr);
       console.error("=========================================");
     }
-
-    // Upload moving photo video to Google Drive (if present)
-    let movingPhotoDriveLink: string | null = null;
-    if (movingPhotoDataUrl && movingPhotoFilename) {
-      const localMovingPath = path.join(UPLOADS_DIR, movingPhotoFilename);
-      try {
-        movingPhotoDriveLink = await uploadToGoogleDrive(localMovingPath, movingPhotoFilename);
-        if (movingPhotoDriveLink) {
-          record.movingPhotoDriveLink = movingPhotoDriveLink;
-          const fs = require('fs');
-          const dbPath = path.join(UPLOADS_DIR, 'db.json');
-          if (fs.existsSync(dbPath)) {
-            const dbData = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
-            const rec = dbData.find((r: any) => r.id === id);
-            if (rec) {
-              rec.movingPhotoDriveLink = movingPhotoDriveLink;
-              fs.writeFileSync(dbPath, JSON.stringify(dbData, null, 2), 'utf8');
-            }
-          }
-          console.log(`🔗 [Google Drive] Moving Photo successfully auto-saved to cloud: ${movingPhotoDriveLink}`);
-        }
-      } catch (driveErr: any) {
-        console.error("====== 구글 드라이브 움직이는 포토 업로드 에러 ======");
-        console.error(driveErr.message || driveErr);
-        console.error("=========================================");
-      }
-    }
     
     res.status(201).json({
       success: true,
       id: record.id,
       record,
-      driveLink,
-      movingPhotoDriveLink
+      driveLink
     });
   } catch (error: any) {
     console.error('Upload failed:', error);

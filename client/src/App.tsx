@@ -15,9 +15,6 @@ export const App: React.FC = () => {
   const [mode, setMode] = useState<'capture' | 'upload'>('capture');
   const [layout, setLayout] = useState<FrameLayout>('2x6-strip-pair');
   const [capturedPhotos, setCapturedPhotos] = useState<string[]>([]);
-  const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
-  const [saveVideoOption, setSaveVideoOption] = useState<boolean>(true);
-  const [shotOffsets, setShotOffsets] = useState<any[]>([]);
   const [frameColor, setFrameColor] = useState<string>('#ffffff');
   const [finishedCanvas, setFinishedCanvas] = useState<HTMLCanvasElement | null>(null);
   const [shareParamId, setShareParamId] = useState<string | null>(null);
@@ -46,9 +43,6 @@ export const App: React.FC = () => {
 
   const handleReset = () => {
     setCapturedPhotos([]);
-    setVideoBlob(null);
-    setSaveVideoOption(true);
-    setShotOffsets([]);
     setFrameColor('#ffffff');
     setFinishedCanvas(null);
     setStep('mode');
@@ -344,10 +338,8 @@ export const App: React.FC = () => {
           <CameraBooth
             layout={layout}
             onBack={() => setStep('layout')}
-            onComplete={(photos, blob, offsets) => {
+            onComplete={(photos) => {
               setCapturedPhotos(photos);
-              setVideoBlob(blob || null);
-              setShotOffsets(offsets || []);
               setStep('customize');
             }}
           />
@@ -358,9 +350,6 @@ export const App: React.FC = () => {
             onBack={() => setStep('layout')}
             onFinish={(photos) => {
               setCapturedPhotos(photos);
-              setVideoBlob(null);
-              setShotOffsets([]);
-              setSaveVideoOption(false);
               setStep('customize');
             }}
           />
@@ -371,9 +360,8 @@ export const App: React.FC = () => {
             photos={capturedPhotos}
             layout={layout}
             onBack={() => setStep(mode === 'capture' ? 'capture' : 'upload')}
-            onFinish={(canvas, saveVideo, color) => {
+            onFinish={(canvas, color) => {
               setFinishedCanvas(canvas);
-              setSaveVideoOption(saveVideo);
               setFrameColor(color);
               setStep('share');
             }}
@@ -383,8 +371,6 @@ export const App: React.FC = () => {
         {step === 'share' && finishedCanvas && (
           <ShareModal
             canvas={finishedCanvas}
-            videoBlob={saveVideoOption ? videoBlob : null}
-            shotOffsets={saveVideoOption ? shotOffsets : undefined}
             layout={layout}
             frameColor={frameColor}
             onReset={handleReset}
