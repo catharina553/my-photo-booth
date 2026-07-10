@@ -13,11 +13,13 @@ export const App: React.FC = () => {
   const [step, setStep] = useState<BoothStep>('layout');
   const [layout, setLayout] = useState<FrameLayout>('2x6-strip-pair');
   const [capturedPhotos, setCapturedPhotos] = useState<string[]>([]);
+  const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
+  const [saveVideoOption, setSaveVideoOption] = useState<boolean>(true);
   const [finishedCanvas, setFinishedCanvas] = useState<HTMLCanvasElement | null>(null);
   const [shareParamId, setShareParamId] = useState<string | null>(null);
   
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    return (localStorage.getItem('theme') as 'light' | 'dark') || 'dark';
+    return (localStorage.getItem('theme') as 'light' | 'dark') || 'light'; // Default to light mode for clean white/gray look
   });
 
   useEffect(() => {
@@ -40,6 +42,8 @@ export const App: React.FC = () => {
 
   const handleReset = () => {
     setCapturedPhotos([]);
+    setVideoBlob(null);
+    setSaveVideoOption(true);
     setFinishedCanvas(null);
     setStep('layout');
   };
@@ -198,8 +202,9 @@ export const App: React.FC = () => {
           <CameraBooth
             layout={layout}
             onBack={() => setStep('layout')}
-            onComplete={(photos) => {
+            onComplete={(photos, blob) => {
               setCapturedPhotos(photos);
+              setVideoBlob(blob || null);
               setStep('customize');
             }}
           />
@@ -210,8 +215,9 @@ export const App: React.FC = () => {
             photos={capturedPhotos}
             layout={layout}
             onBack={() => setStep('capture')}
-            onFinish={(canvas) => {
+            onFinish={(canvas, saveVideo) => {
               setFinishedCanvas(canvas);
+              setSaveVideoOption(saveVideo);
               setStep('share');
             }}
           />
@@ -220,6 +226,7 @@ export const App: React.FC = () => {
         {step === 'share' && finishedCanvas && (
           <ShareModal
             canvas={finishedCanvas}
+            videoBlob={saveVideoOption ? videoBlob : null}
             onReset={handleReset}
           />
         )}

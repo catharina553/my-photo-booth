@@ -6,12 +6,14 @@ import type { FrameLayout } from '../utils/canvasRenderer';
 interface CameraBoothProps {
   layout: FrameLayout;
   onBack: () => void;
-  onComplete: (photos: string[]) => void;
+  onComplete: (photos: string[], videoBlob?: Blob | null) => void;
 }
 
 export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComplete }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hiddenCanvasRef = useRef<HTMLCanvasElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
 
   const [streamActive, setStreamActive] = useState<boolean>(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -20,6 +22,7 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
   const [timerSeconds, setTimerSeconds] = useState<number>(3); // 3 seconds default
 
   const [capturedPhotos, setCapturedPhotos] = useState<string[]>([]);
+  const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
   const [isCapturingSession, setIsCapturingSession] = useState<boolean>(false);
   const [currentShotIndex, setCurrentShotIndex] = useState<number>(0);
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -60,6 +63,50 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
       stream.getTracks().forEach(track => track.stop());
     }
     setStreamActive(false);
+  };
+
+  const startRecording = () => {
+    if (!videoRef.current || !videoRef.current.srcObject) return;
+    const stream = videoRef.current.srcObject as MediaStream;
+    recordedChunksRef.current = [];
+    
+    // Determine the browser-supported codecs/mime types
+    let options = { mimeType: 'video/webm;codecs=vp9' };
+    if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+      options = { mimeType: 'video/webm;codecs=vp8' };
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+        options = { mimeType: 'video/webm' };
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+          options = { mimeType: '' }; // browser default fallback
+        }
+      }
+    }
+    
+    try {
+      const recorder = new MediaRecorder(stream, options);
+      recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          recordedChunksRef.current.push(event.data);
+        }
+      };
+      recorder.onstop = () => {
+        const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
+        setVideoBlob(blob);
+        console.log('📹 Background video blob ready. Size:', blob.size);
+      };
+      mediaRecorderRef.current = recorder;
+      recorder.start(250); // slice chunks every 250ms
+      console.log('📹 Background webcam recording started!');
+    } catch (e) {
+      console.error('Failed to start MediaRecorder:', e);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+      console.log('📹 Background webcam recording stopped.');
+    }
   };
 
   // Capture single frame from video element
@@ -106,20 +153,23 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
 
   const [selectedPhotoIndices, setSelectedPhotoIndices] = useState<number[]>([]);
 
-  // Run automated 8-shot capture flow
+  // Run automated 6-shot capture flow
   const startAutomatedSession = () => {
     if (!streamActive || isCapturingSession) return;
     setCapturedPhotos([]);
+    setVideoBlob(null);
     setSelectedPhotoIndices([]);
     setIsCapturingSession(true);
     setCurrentShotIndex(1);
+    startRecording();
     runShotSequence(1, []);
   };
 
   const runShotSequence = (shotNum: number, currentList: string[]) => {
-    if (shotNum > 8) {
+    if (shotNum > 6) {
       setIsCapturingSession(false);
       setCountdown(null);
+      stopRecording();
       stopCamera();
       return;
     }
@@ -149,11 +199,12 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
 
         // Pause 1.2 seconds before next shot countdown starts
         setTimeout(() => {
-          if (shotNum < 8) {
+          if (shotNum < 6) {
             runShotSequence(shotNum + 1, updatedList);
           } else {
             setIsCapturingSession(false);
             setCountdown(null);
+            stopRecording();
             stopCamera(); // Turn off camera to save resources during photo selection
           }
         }, 1200);
@@ -163,6 +214,7 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
 
   const handleRetakeAll = () => {
     setCapturedPhotos([]);
+    setVideoBlob(null);
     setSelectedPhotoIndices([]);
     startCamera();
   };
@@ -184,16 +236,16 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
           <div style={{
             position: 'relative',
             width: '100%',
-            maxWidth: capturedPhotos.length === 8 ? '100%' : (layout === '2x6-strip-pair' ? '100%' : 'calc(60vh * (510 / 660))'),
-            aspectRatio: capturedPhotos.length === 8 ? undefined : cameraAspectRatio,
-            maxHeight: capturedPhotos.length === 8 ? undefined : '60vh',
+            maxWidth: capturedPhotos.length === 6 ? '100%' : (layout === '2x6-strip-pair' ? '100%' : 'calc(60vh * (510 / 660))'),
+            aspectRatio: capturedPhotos.length === 6 ? undefined : cameraAspectRatio,
+            maxHeight: capturedPhotos.length === 6 ? undefined : '60vh',
             margin: '0 auto',
             background: '#000',
             borderRadius: '16px',
             overflow: 'hidden',
             boxShadow: 'inset 0 0 40px rgba(0,0,0,0.9)'
           }}>
-            {capturedPhotos.length === 8 ? (
+            {capturedPhotos.length === 6 ? (
               <div style={{
                 width: '100%',
                 padding: '20px',
@@ -403,7 +455,7 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
                       border: '1px solid var(--border-glass)'
                     }}>
                       <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: isCapturingSession ? 'var(--accent-neon-pink)' : '#10b981' }} />
-                      {isCapturingSession ? `촬영 진행 중 • ${currentShotIndex}/8번째 컷` : '촬영 준비 완료'}
+                      {isCapturingSession ? `촬영 진행 중 • ${currentShotIndex}/6번째 컷` : '촬영 준비 완료'}
                     </div>
                   </div>
                 )}
@@ -416,7 +468,7 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
         <div className="glass-card controls-top-card" style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
           {/* Action Button */}
           <div style={{ flex: '1 1 auto', minWidth: '220px' }}>
-            {capturedPhotos.length < 8 ? (
+            {capturedPhotos.length < 6 ? (
               <button
                 onClick={startAutomatedSession}
                 disabled={!streamActive || isCapturingSession}
@@ -424,14 +476,14 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
                 style={{ width: '100%', padding: '10px 18px', fontSize: '0.95rem', borderRadius: '12px' }}
               >
                 <Play size={16} fill="currentColor" />
-                {isCapturingSession ? `순차 촬영 진행 중... (${currentShotIndex}/8)` : '📸 8컷 촬영 시작'}
+                {isCapturingSession ? `순차 촬영 진행 중... (${currentShotIndex}/6)` : '📸 6컷 촬영 시작'}
               </button>
             ) : (
               <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
                 <button
                   onClick={() => {
                     const orderedPhotos = selectedPhotoIndices.map(i => capturedPhotos[i]);
-                    onComplete(orderedPhotos);
+                    onComplete(orderedPhotos, videoBlob);
                   }}
                   disabled={selectedPhotoIndices.length !== 4}
                   className="btn-primary"
@@ -461,7 +513,7 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
               <button
                 onClick={() => setMirrored(!mirrored)}
                 className="btn-secondary"
-                disabled={isCapturingSession || capturedPhotos.length === 8}
+                disabled={isCapturingSession || capturedPhotos.length === 6}
                 title="화면 좌우 반전"
                 style={{ padding: '8px 12px', borderRadius: '10px', fontSize: '0.85rem' }}
               >
@@ -470,7 +522,7 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
               <button
                 onClick={() => setShowGrid(!showGrid)}
                 className="btn-secondary"
-                disabled={isCapturingSession || capturedPhotos.length === 8}
+                disabled={isCapturingSession || capturedPhotos.length === 6}
                 title="가이드 격자 토글"
                 style={{ padding: '8px 12px', borderRadius: '10px', fontSize: '0.85rem' }}
               >
@@ -487,7 +539,7 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
                 <button
                   key={sec}
                   onClick={() => setTimerSeconds(sec)}
-                  disabled={isCapturingSession || capturedPhotos.length === 8}
+                  disabled={isCapturingSession || capturedPhotos.length === 6}
                   style={{
                     padding: '5px 8px',
                     borderRadius: '6px',
@@ -511,10 +563,10 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
         <div className="glass-card preview-sidebar-card" style={{ padding: '12px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <h2 style={{ fontSize: '0.92rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Sparkles size={14} className="neon-text" /> 
-            {capturedPhotos.length === 8 ? '인화할 4컷 선택 결과' : `실시간 촬영 기록 (${capturedPhotos.length}/8)`}
+            {capturedPhotos.length === 6 ? '인화할 4컷 선택 결과' : `실시간 촬영 기록 (${capturedPhotos.length}/6)`}
           </h2>
           
-          {capturedPhotos.length === 8 ? (
+          {capturedPhotos.length === 6 ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
               {[0, 1, 2, 3].map((index) => {
                 const selIndex = selectedPhotoIndices[index];
@@ -548,8 +600,8 @@ export const CameraBooth: React.FC<CameraBoothProps> = ({ layout, onBack, onComp
               })}
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '6px' }}>
-              {[0, 1, 2, 3, 4, 5, 6, 7].map((index) => {
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '6px' }}>
+              {[0, 1, 2, 3, 4, 5].map((index) => {
                 const photo = capturedPhotos[index];
                 const isCurrent = isCapturingSession && currentShotIndex === index + 1;
                 return (

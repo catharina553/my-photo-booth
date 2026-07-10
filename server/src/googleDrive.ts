@@ -131,9 +131,10 @@ export async function uploadToGoogleDrive(filePath: string, filename: string): P
       '\r\n'
     ].join('');
 
+    const mimeType = filename.endsWith('.webm') ? 'video/webm' : (filename.endsWith('.mp4') ? 'video/mp4' : 'image/png');
     const mediaHeader = [
       `--${boundary}\r\n`,
-      'Content-Type: image/png\r\n\r\n'
+      `Content-Type: ${mimeType}\r\n\r\n`
     ].join('');
 
     const mediaFooter = `\r\n--${boundary}--\r\n`;

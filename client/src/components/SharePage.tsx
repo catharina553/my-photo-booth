@@ -50,6 +50,20 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
   };
 
   const imageUrl = photoData ? (isLocalhost ? `http://${window.location.hostname}:3001/uploads/${photoData.filename}` : `${window.location.protocol}//${window.location.host}/uploads/${photoData.filename}`) : '';
+  const videoUrl = photoData && photoData.videoFilename ? (isLocalhost ? `http://${window.location.hostname}:3001/uploads/${photoData.videoFilename}` : `${window.location.protocol}//${window.location.host}/uploads/${photoData.videoFilename}`) : '';
+
+  const handleDownloadVideo = () => {
+    if (!videoUrl) return;
+    const a = document.createElement('a');
+    a.href = videoUrl;
+    // Extract video extension from filename
+    const ext = photoData.videoFilename.split('.').pop() || 'webm';
+    a.download = `timelapse-${photoId}.${ext}`;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
 
   const handleDownloadMobile = async () => {
     if (!imageUrl) return;
@@ -63,8 +77,8 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
         try {
           await navigator.share({
             files: [file],
-            title: '뽀토부스 사진',
-            text: '오늘 찍은 뽀토부스 사진입니다.'
+            title: 'BbotoBooth 사진',
+            text: '오늘 찍은 4컷 사진입니다.'
           });
           return;
         } catch (err) {
@@ -155,7 +169,7 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
             overflow: 'hidden',
             borderRadius: '14px',
             marginBottom: '20px',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.8)'
+            boxShadow: '0 20px 40px rgba(0,0,0,0.12)'
           }}>
             <img
               src={imageUrl}
@@ -167,14 +181,41 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
           <button
             onClick={handleDownloadMobile}
             className="btn-primary"
-            style={{ width: '100%', padding: '16px', fontSize: '1.1rem', borderRadius: '14px' }}
+            style={{ width: '100%', padding: '16px', fontSize: '1.1rem', borderRadius: '14px', marginBottom: '24px' }}
           >
             <Download size={22} /> 스마트폰 사진첩에 저장 (고화질)
           </button>
 
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '12px', textAlign: 'center', lineHeight: 1.4 }}>
-            위 저장 버튼을 탭하거나 이미지를 길게 누르면 고해상도로 저장할 수 있습니다.
-          </p>
+          {videoUrl && (
+            <div style={{ width: '100%', borderTop: '1px solid var(--border-glass)', paddingTop: '20px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', fontWeight: 800, marginBottom: '12px', color: 'var(--text-main)' }}>
+                🎥 촬영 과정 타임랩스
+              </div>
+              <video
+                src={videoUrl}
+                controls
+                playsInline
+                style={{
+                  width: '100%',
+                  borderRadius: '14px',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+                  background: '#000',
+                  marginBottom: '12px'
+                }}
+              />
+              <button
+                onClick={handleDownloadVideo}
+                className="btn-secondary"
+                style={{ width: '100%', padding: '14px', fontSize: '1rem', borderRadius: '14px', justifyContent: 'center' }}
+              >
+                <Download size={18} /> 타임랩스 동영상 저장
+              </button>
+            </div>
+          )}
+
+          <div style={{ fontSize: '0.75rem', color: 'var(--accent-neon-pink)', fontWeight: 800, marginTop: '12px', textAlign: 'center', lineHeight: 1.4 }}>
+            ⚠️ 본 페이지와 파일(사진/영상)은 개인정보 보호를 위해 3시간 뒤 자동으로 완전히 만료 및 삭제 처리됩니다.
+          </div>
         </div>
       )}
     </div>

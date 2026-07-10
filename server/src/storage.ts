@@ -9,6 +9,8 @@ export interface PhotoRecord {
   layout: string;
   createdAt: string;
   filename: string;
+  videoFilename?: string;
+  videoDriveLink?: string;
 }
 
 export const UPLOADS_DIR = path.join(os.tmpdir(), 'bbotobooth_uploads');
@@ -34,7 +36,7 @@ function saveDb(records: PhotoRecord[]) {
   fs.writeFileSync(DB_FILE, JSON.stringify(records, null, 2), 'utf-8');
 }
 
-export function savePhotoRecord(record: PhotoRecord, base64Data: string): PhotoRecord {
+export function savePhotoRecord(record: PhotoRecord, base64Data: string, videoBase64?: string): PhotoRecord {
   const records = loadDb();
   
   // Remove data:image/png;base64, prefix if present
@@ -43,6 +45,14 @@ export function savePhotoRecord(record: PhotoRecord, base64Data: string): PhotoR
   
   const filePath = path.join(UPLOADS_DIR, record.filename);
   fs.writeFileSync(filePath, buffer);
+
+  if (videoBase64 && record.videoFilename) {
+    // Remove data:video/webm;base64, or data:video/mp4;base64, prefix if present
+    const cleanVideoBase64 = videoBase64.replace(/^data:video\/\w+;base64,/, '');
+    const videoBuffer = Buffer.from(cleanVideoBase64, 'base64');
+    const videoPath = path.join(UPLOADS_DIR, record.videoFilename);
+    fs.writeFileSync(videoPath, videoBuffer);
+  }
   
   records.push(record);
   saveDb(records);
@@ -54,16 +64,22 @@ export function getPhotoRecord(id: string): PhotoRecord | undefined {
   const record = records.find(r => r.id === id);
   if (!record) return undefined;
 
-  // Check if expired (72 hours)
+  // Check if expired (3 hours based on short-term personal data protection guidelines)
   const now = new Date().getTime();
-  const EXPIRE_MS = 72 * 60 * 60 * 1000;
+  const EXPIRE_MS = 3 * 60 * 60 * 1000;
   const createdTime = new Date(record.createdAt).getTime();
 
   if (now - createdTime > EXPIRE_MS) {
-    // Silently clean up expired record & image
+    // Silently clean up expired record & files
     const filePath = path.join(UPLOADS_DIR, record.filename);
     if (fs.existsSync(filePath)) {
       try { fs.unlinkSync(filePath); } catch (e) {}
+    }
+    if (record.videoFilename) {
+      const videoPath = path.join(UPLOADS_DIR, record.videoFilename);
+      if (fs.existsSync(videoPath)) {
+        try { fs.unlinkSync(videoPath); } catch (e) {}
+      }
     }
     const updated = records.filter(r => r.id !== id);
     saveDb(updated);
@@ -75,7 +91,7 @@ export function getPhotoRecord(id: string): PhotoRecord | undefined {
 export function getAllPhotos(): PhotoRecord[] {
   const records = loadDb();
   const now = new Date().getTime();
-  const EXPIRE_MS = 72 * 60 * 60 * 1000;
+  const EXPIRE_MS = 3 * 60 * 60 * 1000;
   // Return only non-expired photos
   return records
     .filter(r => now - new Date(r.createdAt).getTime() <= EXPIRE_MS)
@@ -86,7 +102,7 @@ export function cleanupExpiredPhotos() {
   try {
     const records = loadDb();
     const now = new Date().getTime();
-    const EXPIRE_MS = 72 * 60 * 60 * 1000;
+    const EXPIRE_MS = 3 * 60 * 60 * 1000;
     
     const validRecords: PhotoRecord[] = [];
     let deletedCount = 0;
@@ -98,6 +114,12 @@ export function cleanupExpiredPhotos() {
         if (fs.existsSync(filePath)) {
           try { fs.unlinkSync(filePath); } catch (e) {}
         }
+        if (record.videoFilename) {
+          const videoPath = path.join(UPLOADS_DIR, record.videoFilename);
+          if (fs.existsSync(videoPath)) {
+            try { fs.unlinkSync(videoPath); } catch (e) {}
+          }
+        }
         deletedCount++;
       } else {
         validRecords.push(record);
@@ -106,9 +128,9 @@ export function cleanupExpiredPhotos() {
     
     if (deletedCount > 0) {
       saveDb(validRecords);
-      console.log(`🧹 [Cleanup] Automatically removed ${deletedCount} expired photos (>72h).`);
+      console.log(`🧹 [Cleanup] Automatically removed ${deletedCount} expired photos & videos (>3h).`);
     }
   } catch (err) {
-    console.error('[Cleanup Error] Failed to run photo expiration cleanup:', err);
+    console.error('[Cleanup Error] Failed to run photo/video expiration cleanup:', err);
   }
 }

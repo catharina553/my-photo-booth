@@ -7,7 +7,7 @@ interface PhotoEditorProps {
   photos: string[];
   layout: FrameLayout;
   onBack: () => void;
-  onFinish: (canvas: HTMLCanvasElement, config: RenderConfig) => void;
+  onFinish: (canvas: HTMLCanvasElement, saveVideo: boolean) => void;
 }
 
 const FRAME_COLORS = [
@@ -40,6 +40,7 @@ export const PhotoEditor: React.FC<PhotoEditorProps> = ({ photos, layout, onBack
   const [footerText, setFooterText] = useState<string>('');
   const [dateStr] = useState<string>(new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' }));
   const [customFrameName, setCustomFrameName] = useState<string | null>(null);
+  const [saveVideo, setSaveVideo] = useState<boolean>(true);
 
   const handleCustomFrameUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -96,14 +97,7 @@ export const PhotoEditor: React.FC<PhotoEditorProps> = ({ photos, layout, onBack
 
   const handleProceed = () => {
     if (!currentCanvasRef.current) return;
-    onFinish(currentCanvasRef.current, {
-      photos,
-      frameColor,
-      layout,
-      filter,
-      footerText,
-      dateStr
-    });
+    onFinish(currentCanvasRef.current, saveVideo);
   };
 
   return (
@@ -278,6 +272,53 @@ export const PhotoEditor: React.FC<PhotoEditorProps> = ({ photos, layout, onBack
                 textAlign: 'center'
               }}
             />
+          </div>
+
+          {/* 5. Video Save Option Toggle */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '16px 20px',
+            borderRadius: '16px',
+            background: 'var(--bg-tertiary)',
+            border: '1.5px solid var(--border-glass)'
+          }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                🎥 타임랩스 영상 저장
+              </label>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                촬영하는 전체 과정을 동영상으로 함께 저장합니다.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSaveVideo(!saveVideo)}
+              style={{
+                position: 'relative',
+                width: '48px',
+                height: '26px',
+                borderRadius: '99px',
+                background: saveVideo ? 'var(--accent-neon-pink)' : '#cbd5e1',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'background-color 0.2s ease',
+                padding: 0
+              }}
+            >
+              <span style={{
+                position: 'absolute',
+                top: '3px',
+                left: saveVideo ? '25px' : '3px',
+                width: '20px',
+                height: '20px',
+                borderRadius: '50%',
+                background: '#ffffff',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                transition: 'left 0.2s ease'
+              }} />
+            </button>
           </div>
 
           {/* Actions */}

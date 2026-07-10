@@ -1,48 +1,26 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&display=swap');
 
 :root {
-  --bg-primary: #0a0a0c;
-  --bg-secondary: #121216;
-  --bg-tertiary: #1c1c22;
-  --bg-glass: rgba(24, 24, 30, 0.65);
-  --bg-glass-heavy: rgba(14, 14, 18, 0.85);
-  --border-glass: rgba(255, 255, 255, 0.08);
-  --border-highlight: rgba(255, 255, 255, 0.2);
-  
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --text-subtle: #64748b;
-
-  --accent-neon-pink: #f43f5e;
-  --accent-neon-purple: #a855f7;
-  --accent-neon-cyan: #06b6d4;
-  
-  --gradient-neon: linear-gradient(135deg, #f43f5e 0%, #a855f7 50%, #06b6d4 100%);
-  --gradient-glow: radial-gradient(circle at 50% 0%, rgba(244, 63, 94, 0.15), transparent 60%);
-  --shadow-neon: 0 8px 25px -5px rgba(244, 63, 94, 0.4);
-}
-
-:root[data-theme="light"] {
-  /* Gen Z Light Theme */
-  --bg-primary: #faf8ff;
+  /* Gen Z White & Light Gray Clean Theme */
+  --bg-primary: #f9fafb;
   --bg-secondary: #ffffff;
-  --bg-tertiary: #f1f3f9;
-  --bg-glass: rgba(255, 255, 255, 0.75);
-  --bg-glass-heavy: rgba(255, 255, 255, 0.9);
-  --border-glass: rgba(0, 0, 0, 0.08);
-  --border-highlight: rgba(0, 0, 0, 0.12);
+  --bg-tertiary: #f3f4f6;
+  --bg-glass: rgba(255, 255, 255, 0.85);
+  --bg-glass-heavy: rgba(255, 255, 255, 0.95);
+  --border-glass: rgba(0, 0, 0, 0.06);
+  --border-highlight: rgba(0, 0, 0, 0.1);
   
-  --text-main: #1e1b4b;
-  --text-muted: #4f46e5;
-  --text-subtle: #6366f1;
+  --text-main: #1f2937;
+  --text-muted: #4b5563;
+  --text-subtle: #9ca3af;
 
   --accent-neon-pink: #ff4d80;
   --accent-neon-purple: #9f5ffd;
   --accent-neon-cyan: #00d2f3;
   
-  --gradient-neon: linear-gradient(135deg, #ff4d80 0%, #9f5ffd 50%, #00d2f3 100%);
-  --gradient-glow: radial-gradient(circle at 50% 0%, rgba(255, 77, 128, 0.15), transparent 60%);
-  --shadow-neon: 0 8px 25px -5px rgba(255, 77, 128, 0.35);
+  --gradient-neon: linear-gradient(135deg, #ff4d80 0%, #9f5ffd 100%);
+  --gradient-glow: radial-gradient(circle at 50% 0%, rgba(255, 77, 128, 0.05), transparent 60%);
+  --shadow-neon: 0 4px 14px rgba(255, 77, 128, 0.18);
 }
 
 * {

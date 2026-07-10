@@ -5,10 +5,11 @@ import confetti from 'canvas-confetti';
 
 interface ShareModalProps {
   canvas: HTMLCanvasElement;
+  videoBlob: Blob | null;
   onReset: () => void;
 }
 
-export const ShareModal: React.FC<ShareModalProps> = ({ canvas, onReset }) => {
+export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, onReset }) => {
   const [photoId, setPhotoId] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string>('');
   const [isUploading, setIsUploading] = useState<boolean>(true);
@@ -35,6 +36,16 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, onReset }) => {
     setUploadError(null);
     try {
       const dataUrl = canvas.toDataURL('image/png');
+      
+      let videoDataUrl: string | undefined = undefined;
+      if (videoBlob) {
+        videoDataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error('Failed to read video file'));
+          reader.readAsDataURL(videoBlob);
+        });
+      }
 
       // 1. Get network discovery info
       const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -60,8 +71,9 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, onReset }) => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: '인생네컷 스튜디오',
-          imageDataUrl: dataUrl
+          title: 'BbotoBooth Session',
+          imageDataUrl: dataUrl,
+          videoDataUrl: videoDataUrl
         })
       });
 
@@ -179,7 +191,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, onReset }) => {
           <div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '6px' }}>공유 및 다운로드</h2>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              동일한 WiFi 환경에서 스마트폰으로 스캔하여 사진첩에 즉시 저장하거나, 프린팅박스 인쇄를 위해 고해상도 파일을 다운로드하세요.
+              스마트폰 카메라로 아래 QR 코드를 스캔하여 네컷 사진과 촬영 비디오(타임랩스)를 즉시 저장하고 확인하실 수 있습니다.
             </p>
           </div>
 
@@ -225,9 +237,12 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, onReset }) => {
                   <Smartphone size={18} color="var(--accent-neon-cyan)" /> 스마트폰으로 스캔하기
                 </div>
                 {photoId && <div style={{ fontSize: '0.75rem', color: 'var(--accent-neon-pink)', fontWeight: 700, marginBottom: '6px' }}>촬영 세션 ID: #{photoId}</div>}
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '14px' }}>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
                   아이폰 또는 안드로이드 카메라로 이 QR 코드를 비추면 스마트폰으로 바로 저장하실 수 있습니다.
                 </p>
+                <div style={{ fontSize: '0.78rem', color: 'var(--accent-neon-pink)', fontWeight: 800, marginBottom: '14px' }}>
+                  ⚠️ QR 코드와 미디어 파일은 개인정보 보호를 위해 3시간 뒤 만료됩니다.
+                </div>
 
                 {/* Share Link box */}
                 <div style={{
