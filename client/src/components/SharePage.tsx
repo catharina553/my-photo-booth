@@ -101,7 +101,8 @@ const VideoLoopPlayer: React.FC<{ src: string; start: number; end: number }> = (
       style={{
         width: '100%',
         height: '100%',
-        objectFit: 'cover'
+        objectFit: 'cover',
+        transform: 'scaleX(-1)' // Mirror to match captured photo perspective
       }}
     />
   );
@@ -153,6 +154,12 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
 
   const imageUrl = photoData ? (isLocalhost ? `http://${window.location.hostname}:3001/uploads/${photoData.filename}` : `${window.location.protocol}//${window.location.host}/uploads/${photoData.filename}`) : '';
   const videoUrl = photoData && photoData.videoFilename ? (isLocalhost ? `http://${window.location.hostname}:3001/uploads/${photoData.videoFilename}` : `${window.location.protocol}//${window.location.host}/uploads/${photoData.videoFilename}`) : '';
+  const isImageFrame = photoData && (
+    photoData.frameColor.startsWith('data:image/') ||
+    photoData.frameColor.startsWith('http') ||
+    photoData.frameColor.includes('.png') ||
+    photoData.frameColor.startsWith('/templates/')
+  );
 
   const handleDownloadVideo = () => {
     if (!videoUrl) return;
@@ -297,7 +304,7 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
                 <img
                   src={imageUrl}
                   alt="Live Photo Background"
-                  style={{ width: '100%', height: 'auto', display: 'block' }}
+                  style={{ width: '100%', height: 'auto', display: 'block', opacity: 1 }}
                 />
                 {getSlotsCoordinates(photoData.layout, photoData.frameColor).map((slot, idx) => (
                   <div
@@ -309,7 +316,8 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
                       width: `${slot.width}%`,
                       height: `${slot.height}%`,
                       overflow: 'hidden',
-                      background: '#000'
+                      background: '#000',
+                      zIndex: 1
                     }}
                   >
                     <VideoLoopPlayer
@@ -319,6 +327,21 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
                     />
                   </div>
                 ))}
+                {isImageFrame && (
+                  <img
+                    src={photoData.frameColor}
+                    alt="Frame Template Overlay"
+                    style={{
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      width: '100%',
+                      height: '100%',
+                      pointerEvents: 'none',
+                      zIndex: 10
+                    }}
+                  />
+                )}
               </div>
               <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.4 }}>
                 💡 스마트폰 화면을 녹화하거나 캡처하여 움짤로도 활용해 보세요!
