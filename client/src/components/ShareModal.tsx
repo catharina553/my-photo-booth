@@ -138,6 +138,208 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, shotO
     });
   };
 
+  const getSlotsCoordinates = (layoutStyle: string, colorVal: string = '') => {
+    if (layoutStyle === '2x6-strip-pair') {
+      const ys = [3.333, 23.556, 43.778, 64.000];
+      const lefts = [5.833, 57.500];
+      const slots: { left: number; top: number; width: number; height: number; videoIdx: number }[] = [];
+      lefts.forEach((leftX) => {
+        ys.forEach((y, i) => {
+          slots.push({
+            left: leftX,
+            top: y,
+            width: 40.000,
+            height: 18.889,
+            videoIdx: i
+          });
+        });
+      });
+      return slots;
+    } else {
+      let photoW = 42.5;
+      let photoH = 36.667;
+      let col0 = 5.833;
+      let col1 = 51.667;
+      let row0 = 8.333;
+      let row1 = 47.222;
+      
+      if (colorVal.includes('yallu_')) {
+        photoW = 41.833;
+        photoH = 36.556;
+        col0 = 5.75;
+        col1 = 52.5;
+        row0 = 8.111;
+        row1 = 47.278;
+      } else if (colorVal.includes('mt_youth.png') || colorVal.includes('mt_priest')) {
+        photoW = 42.5;
+        photoH = 36.944;
+        col0 = 5.417;
+        col1 = 51.667;
+        row0 = 7.889;
+        row1 = 47.278;
+      }
+      return [
+        { left: col0, top: row0, width: photoW, height: photoH, videoIdx: 0 },
+        { left: col1, top: row0, width: photoW, height: photoH, videoIdx: 1 },
+        { left: col0, top: row1, width: photoW, height: photoH, videoIdx: 2 },
+        { left: col1, top: row1, width: photoW, height: photoH, videoIdx: 3 }
+      ];
+    }
+  };
+
+  const compileMovingPhotoVideo = (
+    rawVideoBlob: Blob,
+    photoCanvas: HTMLCanvasElement,
+    layoutStyle: string,
+    colorVal: string,
+    offsets: ShotOffset[]
+  ): Promise<Blob> => {
+    return new Promise((resolve) => {
+      const videos = [0, 1, 2, 3].map(() => {
+        const v = document.createElement('video');
+        v.src = URL.createObjectURL(rawVideoBlob);
+        v.muted = true;
+        v.playsInline = true;
+        return v;
+      });
+
+      const isImageFrame = colorVal.startsWith('data:image/') ||
+                           colorVal.startsWith('http') ||
+                           colorVal.includes('.png') ||
+                           colorVal.startsWith('/templates/');
+
+      let templateImg: HTMLImageElement | null = null;
+      const loadOverlay = async () => {
+        if (isImageFrame) {
+          try {
+            templateImg = new Image();
+            templateImg.crossOrigin = 'anonymous';
+            await new Promise((res, rej) => {
+              templateImg!.onload = res;
+              templateImg!.onerror = rej;
+              templateImg!.src = colorVal;
+            });
+          } catch (e) {
+            console.error("Failed to load overlay in moving compiler", e);
+          }
+        }
+      };
+
+      let loadedCount = 0;
+      const onVideoLoaded = () => {
+        loadedCount++;
+        if (loadedCount === 4) {
+          startCompilation();
+        }
+      };
+
+      videos.forEach(v => {
+        v.onloadedmetadata = onVideoLoaded;
+        v.onerror = () => resolve(rawVideoBlob);
+      });
+
+      const startCompilation = async () => {
+        await loadOverlay();
+
+        const width = photoCanvas.width;
+        const height = photoCanvas.height;
+
+        const canvasElement = document.createElement('canvas');
+        canvasElement.width = width;
+        canvasElement.height = height;
+        const ctx = canvasElement.getContext('2d');
+        if (!ctx) {
+          resolve(rawVideoBlob);
+          return;
+        }
+
+        const chunks: Blob[] = [];
+        let stream: MediaStream;
+        try {
+          stream = (canvasElement as any).captureStream(30);
+        } catch (e) {
+          try {
+            stream = (canvasElement as any).captureStream();
+          } catch (e2) {
+            resolve(rawVideoBlob);
+            return;
+          }
+        }
+
+        let options = { mimeType: 'video/webm;codecs=vp9' };
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+          options = { mimeType: 'video/webm;codecs=vp8' };
+          if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+            options = { mimeType: 'video/webm' };
+            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+              options = { mimeType: '' };
+            }
+          }
+        }
+
+        const recorder = new MediaRecorder(stream, options);
+        recorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) chunks.push(e.data);
+        };
+        recorder.onstop = () => {
+          resolve(new Blob(chunks, { type: 'video/webm' }));
+        };
+
+        videos.forEach((v, idx) => {
+          const offset = offsets[idx] || { start: 0, end: 3 };
+          v.currentTime = offset.start;
+          v.play();
+        });
+
+        recorder.start(250);
+        const compileStartTime = Date.now();
+        const slots = getSlotsCoordinates(layoutStyle, colorVal);
+
+        let animationFrameId: number;
+        const draw = () => {
+          const elapsed = (Date.now() - compileStartTime) / 1000;
+          if (elapsed >= 5.0) {
+            cancelAnimationFrame(animationFrameId);
+            videos.forEach(v => v.pause());
+            if (recorder.state !== 'inactive') {
+              recorder.stop();
+            }
+            return;
+          }
+
+          ctx.drawImage(photoCanvas, 0, 0);
+
+          slots.forEach((slot) => {
+            const v = videos[slot.videoIdx];
+            const offset = offsets[slot.videoIdx] || { start: 0, end: 3 };
+            const duration = Math.max(0.5, offset.end - offset.start);
+            const relativeTime = elapsed % duration;
+            v.currentTime = offset.start + relativeTime;
+
+            const px = (slot.left / 100) * width;
+            const py = (slot.top / 100) * height;
+            const pw = (slot.width / 100) * width;
+            const ph = (slot.height / 100) * height;
+
+            ctx.save();
+            ctx.translate(px + pw, py);
+            ctx.scale(-1, 1);
+            ctx.drawImage(v, 0, 0, pw, ph);
+            ctx.restore();
+          });
+
+          if (isImageFrame && templateImg) {
+            ctx.drawImage(templateImg, 0, 0, width, height);
+          }
+
+          animationFrameId = requestAnimationFrame(draw);
+        };
+
+        draw();
+      };
+    });
+  };
+
   const uploadCanvasToBackend = async (retryCount = 0) => {
     setIsUploading(true);
     setUploadError(null);
@@ -153,6 +355,17 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, shotO
           reader.onloadend = () => resolve(reader.result as string);
           reader.onerror = () => reject(new Error('Failed to read compiled video file'));
           reader.readAsDataURL(compiledBlob);
+        });
+      }
+
+      let movingPhotoDataUrl: string | undefined = undefined;
+      if (videoBlob && shotOffsets && shotOffsets.length === 4) {
+        const compiledMovingBlob = await compileMovingPhotoVideo(videoBlob, canvas, layout, frameColor, shotOffsets);
+        movingPhotoDataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = () => reject(new Error('Failed to read compiled moving photo video'));
+          reader.readAsDataURL(compiledMovingBlob);
         });
       }
 
@@ -183,6 +396,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ canvas, videoBlob, shotO
           title: 'BbotoBooth Session',
           imageDataUrl: dataUrl,
           videoDataUrl: videoDataUrl,
+          movingPhotoDataUrl: movingPhotoDataUrl,
           shotOffsets: shotOffsets,
           layout: layout,
           frameColor: frameColor

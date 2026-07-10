@@ -154,6 +154,7 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
 
   const imageUrl = photoData ? (isLocalhost ? `http://${window.location.hostname}:3001/uploads/${photoData.filename}` : `${window.location.protocol}//${window.location.host}/uploads/${photoData.filename}`) : '';
   const videoUrl = photoData && photoData.videoFilename ? (isLocalhost ? `http://${window.location.hostname}:3001/uploads/${photoData.videoFilename}` : `${window.location.protocol}//${window.location.host}/uploads/${photoData.videoFilename}`) : '';
+  const movingPhotoUrl = photoData && photoData.movingPhotoFilename ? (isLocalhost ? `http://${window.location.hostname}:3001/uploads/${photoData.movingPhotoFilename}` : `${window.location.protocol}//${window.location.host}/uploads/${photoData.movingPhotoFilename}`) : '';
   const isImageFrame = photoData && (
     photoData.frameColor.startsWith('data:image/') ||
     photoData.frameColor.startsWith('http') ||
@@ -168,6 +169,18 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
     // Extract video extension from filename
     const ext = photoData.videoFilename.split('.').pop() || 'webm';
     a.download = `timelapse-${photoId}.${ext}`;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  const handleDownloadMovingPhoto = () => {
+    if (!movingPhotoUrl) return;
+    const a = document.createElement('a');
+    a.href = movingPhotoUrl;
+    const ext = photoData.movingPhotoFilename.split('.').pop() || 'webm';
+    a.download = `moving-photo-${photoId}.${ext}`;
     a.target = '_blank';
     document.body.appendChild(a);
     a.click();
@@ -343,8 +356,17 @@ export const SharePage: React.FC<SharePageProps> = ({ photoId }) => {
                   />
                 )}
               </div>
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.4 }}>
-                💡 스마트폰 화면을 녹화하거나 캡처하여 움짤로도 활용해 보세요!
+              {movingPhotoUrl && (
+                <button
+                  onClick={handleDownloadMovingPhoto}
+                  className="btn-primary"
+                  style={{ width: '100%', padding: '14px', fontSize: '1rem', borderRadius: '14px', justifyContent: 'center', marginTop: '12px' }}
+                >
+                  <Download size={18} /> 움직이는 포토카드 (동영상) 저장
+                </button>
+              )}
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.4, marginTop: '10px' }}>
+                💡 4개의 컷이 각자 움직이는 고유한 루프 포토카드 동영상 파일입니다.
               </p>
             </div>
           )}

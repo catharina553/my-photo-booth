@@ -16,6 +16,8 @@ export interface PhotoRecord {
   filename: string;
   videoFilename?: string;
   videoDriveLink?: string;
+  movingPhotoFilename?: string;
+  movingPhotoDriveLink?: string;
   selectedIndices?: number[];
   shotOffsets?: ShotOffset[];
 }
@@ -43,7 +45,12 @@ function saveDb(records: PhotoRecord[]) {
   fs.writeFileSync(DB_FILE, JSON.stringify(records, null, 2), 'utf-8');
 }
 
-export function savePhotoRecord(record: PhotoRecord, base64Data: string, videoBase64?: string): PhotoRecord {
+export function savePhotoRecord(
+  record: PhotoRecord,
+  base64Data: string,
+  videoBase64?: string,
+  movingPhotoBase64?: string
+): PhotoRecord {
   const records = loadDb();
   
   // Remove data:image/png;base64, prefix if present
@@ -59,6 +66,13 @@ export function savePhotoRecord(record: PhotoRecord, base64Data: string, videoBa
     const videoBuffer = Buffer.from(cleanVideoBase64, 'base64');
     const videoPath = path.join(UPLOADS_DIR, record.videoFilename);
     fs.writeFileSync(videoPath, videoBuffer);
+  }
+
+  if (movingPhotoBase64 && record.movingPhotoFilename) {
+    const cleanMovingBase64 = movingPhotoBase64.replace(/^data:video\/\w+;base64,/, '');
+    const movingBuffer = Buffer.from(cleanMovingBase64, 'base64');
+    const movingPath = path.join(UPLOADS_DIR, record.movingPhotoFilename);
+    fs.writeFileSync(movingPath, movingBuffer);
   }
   
   records.push(record);
@@ -86,6 +100,12 @@ export function getPhotoRecord(id: string): PhotoRecord | undefined {
       const videoPath = path.join(UPLOADS_DIR, record.videoFilename);
       if (fs.existsSync(videoPath)) {
         try { fs.unlinkSync(videoPath); } catch (e) {}
+      }
+    }
+    if (record.movingPhotoFilename) {
+      const movingPath = path.join(UPLOADS_DIR, record.movingPhotoFilename);
+      if (fs.existsSync(movingPath)) {
+        try { fs.unlinkSync(movingPath); } catch (e) {}
       }
     }
     const updated = records.filter(r => r.id !== id);
@@ -125,6 +145,12 @@ export function cleanupExpiredPhotos() {
           const videoPath = path.join(UPLOADS_DIR, record.videoFilename);
           if (fs.existsSync(videoPath)) {
             try { fs.unlinkSync(videoPath); } catch (e) {}
+          }
+        }
+        if (record.movingPhotoFilename) {
+          const movingPath = path.join(UPLOADS_DIR, record.movingPhotoFilename);
+          if (fs.existsSync(movingPath)) {
+            try { fs.unlinkSync(movingPath); } catch (e) {}
           }
         }
         deletedCount++;

@@ -56,7 +56,7 @@ router.get('/network', (req: Request, res: Response) => {
 // Upload a new 4-cut photo
 router.post('/photos', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { title = 'BbotoBooth Session', frameColor = '#ffffff', layout = '2x6-strip-pair', imageDataUrl, videoDataUrl, selectedIndices, shotOffsets } = req.body;
+    const { title = 'BbotoBooth Session', frameColor = '#ffffff', layout = '2x6-strip-pair', imageDataUrl, videoDataUrl, movingPhotoDataUrl, selectedIndices, shotOffsets } = req.body;
     
     if (!imageDataUrl) {
       res.status(400).json({ error: 'imageDataUrl is required' });
@@ -71,6 +71,8 @@ router.post('/photos', async (req: Request, res: Response): Promise<void> => {
     const videoExt = isMp4 ? 'mp4' : 'webm';
     const videoFilename = videoDataUrl ? `video-${id}.${videoExt}` : undefined;
 
+    const movingPhotoFilename = movingPhotoDataUrl ? `moving-photo-${id}.webm` : undefined;
+
     const record = savePhotoRecord({
       id,
       title,
@@ -79,9 +81,10 @@ router.post('/photos', async (req: Request, res: Response): Promise<void> => {
       createdAt,
       filename,
       videoFilename,
+      movingPhotoFilename,
       selectedIndices,
       shotOffsets
-    }, imageDataUrl, videoDataUrl);
+    }, imageDataUrl, videoDataUrl, movingPhotoDataUrl);
 
     // Upload photo to Google Drive
     const localFilePath = path.join(UPLOADS_DIR, filename);
@@ -110,8 +113,6 @@ router.post('/photos', async (req: Request, res: Response): Promise<void> => {
           record.videoDriveLink = videoDriveLink;
           
           // Re-save database to persist the videoDriveLink
-          const { getAllPhotos, savePhotoRecord } = require('./storage');
-          // Wait, we can just save it. Since getPhotoRecord reads from DB file, we should update the DB file!
           const fs = require('fs');
           const dbPath = path.join(UPLOADS_DIR, 'db.json');
           if (fs.existsSync(dbPath)) {
@@ -130,13 +131,41 @@ router.post('/photos', async (req: Request, res: Response): Promise<void> => {
         console.error("=========================================");
       }
     }
+
+    // Upload moving photo video to Google Drive (if present)
+    let movingPhotoDriveLink: string | null = null;
+    if (movingPhotoDataUrl && movingPhotoFilename) {
+      const localMovingPath = path.join(UPLOADS_DIR, movingPhotoFilename);
+      try {
+        movingPhotoDriveLink = await uploadToGoogleDrive(localMovingPath, movingPhotoFilename);
+        if (movingPhotoDriveLink) {
+          record.movingPhotoDriveLink = movingPhotoDriveLink;
+          const fs = require('fs');
+          const dbPath = path.join(UPLOADS_DIR, 'db.json');
+          if (fs.existsSync(dbPath)) {
+            const dbData = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+            const rec = dbData.find((r: any) => r.id === id);
+            if (rec) {
+              rec.movingPhotoDriveLink = movingPhotoDriveLink;
+              fs.writeFileSync(dbPath, JSON.stringify(dbData, null, 2), 'utf8');
+            }
+          }
+          console.log(`🔗 [Google Drive] Moving Photo successfully auto-saved to cloud: ${movingPhotoDriveLink}`);
+        }
+      } catch (driveErr: any) {
+        console.error("====== 구글 드라이브 움직이는 포토 업로드 에러 ======");
+        console.error(driveErr.message || driveErr);
+        console.error("=========================================");
+      }
+    }
     
     res.status(201).json({
       success: true,
       id: record.id,
       record,
       driveLink,
-      videoDriveLink
+      videoDriveLink,
+      movingPhotoDriveLink
     });
   } catch (error: any) {
     console.error('Upload failed:', error);
