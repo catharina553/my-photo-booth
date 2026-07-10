@@ -67,11 +67,11 @@ router.post('/photos', async (req: Request, res: Response): Promise<void> => {
     const filename = `photo-${id}.png`;
     const createdAt = new Date().toISOString();
     
-    const isMp4 = videoDataUrl && videoDataUrl.startsWith('data:video/mp4');
-    const videoExt = isMp4 ? 'mp4' : 'webm';
-    const videoFilename = videoDataUrl ? `video-${id}.${videoExt}` : undefined;
+    const tempVideoName = videoDataUrl ? `temp-video-${id}.webm` : undefined;
+    const tempMovingName = movingPhotoDataUrl ? `temp-moving-${id}.webm` : undefined;
 
-    const movingPhotoFilename = movingPhotoDataUrl ? `moving-photo-${id}.webm` : undefined;
+    const videoFilename = videoDataUrl ? `video-${id}.mp4` : undefined;
+    const movingPhotoFilename = movingPhotoDataUrl ? `moving-photo-${id}.mp4` : undefined;
 
     const record = savePhotoRecord({
       id,
@@ -80,11 +80,58 @@ router.post('/photos', async (req: Request, res: Response): Promise<void> => {
       layout,
       createdAt,
       filename,
-      videoFilename,
-      movingPhotoFilename,
+      videoFilename: tempVideoName,
+      movingPhotoFilename: tempMovingName,
       selectedIndices,
       shotOffsets
     }, imageDataUrl, videoDataUrl, movingPhotoDataUrl);
+
+    // Convert WebM to MP4 for maximum iOS/Android native player support
+    const { convertWebmToMp4 } = require('./converter');
+    const fs = require('fs');
+
+    if (tempVideoName && videoFilename) {
+      const inputPath = path.join(UPLOADS_DIR, tempVideoName);
+      const outputPath = path.join(UPLOADS_DIR, videoFilename);
+      try {
+        await convertWebmToMp4(inputPath, outputPath);
+        if (fs.existsSync(inputPath)) {
+          fs.unlinkSync(inputPath);
+        }
+        record.videoFilename = videoFilename;
+      } catch (err) {
+        console.error("FFmpeg conversion failed for raw video, fallback to webm", err);
+        // Fallback: keep temp webm name
+        record.videoFilename = tempVideoName;
+      }
+    }
+
+    if (tempMovingName && movingPhotoFilename) {
+      const inputPath = path.join(UPLOADS_DIR, tempMovingName);
+      const outputPath = path.join(UPLOADS_DIR, movingPhotoFilename);
+      try {
+        await convertWebmToMp4(inputPath, outputPath);
+        if (fs.existsSync(inputPath)) {
+          fs.unlinkSync(inputPath);
+        }
+        record.movingPhotoFilename = movingPhotoFilename;
+      } catch (err) {
+        console.error("FFmpeg conversion failed for moving photo loop, fallback to webm", err);
+        record.movingPhotoFilename = tempMovingName;
+      }
+    }
+
+    // Persist finalized .mp4 filenames into db.json
+    const dbPath = path.join(UPLOADS_DIR, 'db.json');
+    if (fs.existsSync(dbPath)) {
+      const dbData = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+      const rec = dbData.find((r: any) => r.id === id);
+      if (rec) {
+        rec.videoFilename = record.videoFilename;
+        rec.movingPhotoFilename = record.movingPhotoFilename;
+        fs.writeFileSync(dbPath, JSON.stringify(dbData, null, 2), 'utf8');
+      }
+    }
 
     // Upload photo to Google Drive
     const localFilePath = path.join(UPLOADS_DIR, filename);
