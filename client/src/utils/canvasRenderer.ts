@@ -211,7 +211,12 @@ export async function renderPhotoBoothCanvas(config: RenderConfig): Promise<HTML
 
       ctx.save();
       ctx.filter = filterStr;
-      drawCoverImage(ctx, img, px, py, photoW, photoH);
+      if (isImageFrame) {
+        const overlap = 6;
+        drawCoverImage(ctx, img, px - overlap, py - overlap, photoW + overlap * 2, photoH + overlap * 2);
+      } else {
+        drawCoverImage(ctx, img, px, py, photoW, photoH);
+      }
       ctx.restore();
 
       if (!isImageFrame) {
